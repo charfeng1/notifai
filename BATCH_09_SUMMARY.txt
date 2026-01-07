@@ -1,0 +1,123 @@
+BATCH_09 SYNTHETIC NOTIFICATION DATA - GENERATION SUMMARY
+==========================================================
+
+FILE LOCATION: E:\projects\notif\data\batch_09.jsonl
+FILE SIZE: 91 KB
+FORMAT: JSONL (one JSON object per line)
+TOTAL ENTRIES: 400 notification records
+
+ID RANGE: 03201 to 03600 (Sequential 5-digit IDs)
+ALL IDs: UNIQUE (400 unique IDs confirmed)
+
+FOLDER DISTRIBUTION (Balanced):
+  - Work: 140 entries (35.0%)
+  - Personal: 140 entries (35.0%)
+  - Promotions: 60 entries (15.0%)
+  - Alerts: 60 entries (15.0%)
+
+PRIORITY DISTRIBUTION (Realistic):
+  - Priority 1 (Ignore): 52 entries (13.0%) - Noise/low-priority
+  - Priority 2 (Low): 82 entries (20.5%) - Low importance
+  - Priority 3 (Normal): 142 entries (35.5%) - Standard/default
+  - Priority 4 (Important): 65 entries (16.2%) - Time-sensitive/action needed
+  - Priority 5 (Urgent): 59 entries (14.8%) - Critical/emergencies
+
+CONTENT DIVERSITY:
+
+Languages:
+  - English (primary)
+  - Chinese (Simplified) - WeChat messages, family communication
+  - Spanish - Personal messages, family chat
+  - Hindi - Personal messages, family chat
+  - Japanese - LINE messages, casual conversation
+  - German - Casual messaging
+  - French - Casual messaging
+
+Apps (25+ apps across all folders):
+
+WORK (Slack, Teams, Gmail, Outlook, Jira, GitHub, Linear, Notion, Asana, Monday.com)
+PERSONAL (WhatsApp, WeChat, Telegram, iMessage, Facebook Messenger, Viber, Snapchat, Twitter, Instagram, LINE)
+PROMOTIONS (Amazon, Shopee, Lazada, Target, Walmart, eBay, AliExpress, H&M, Newsletter, Coupons)
+ALERTS (Chase, Bank of America, Wells Fargo, UPS, FedEx, USPS, Uber, DoorDash, System, Calendar)
+
+CONTENT EXAMPLES:
+
+WORK FOLDER:
+  - Production incidents (P1 security breaches, service outages)
+  - Urgent code reviews (CVE patches)
+  - Meeting reminders (board meetings, client calls)
+  - PR review requests
+  - Sprint planning notifications
+  - Project status updates
+
+PERSONAL FOLDER:
+  - Family emergencies (surgery reminders, emergencies)
+  - Time-sensitive plans (tonight's dinner, landlord meetings)
+  - Casual conversation (movie recommendations, making plans)
+  - Group chat messages
+  - Birthday wishes
+  - Language diversity (Chinese, Spanish, Hindi, Japanese, German, French)
+
+PROMOTIONS FOLDER:
+  - Flash sales with time-sensitive deals (Lightning deals, limited inventory)
+  - Weekly promotional offers
+  - Coupon notifications
+  - New collection announcements
+  - Member exclusive deals
+  - Spam/unwanted marketing
+
+ALERTS FOLDER:
+  - Security alerts (fraud detection, suspicious login attempts)
+  - Delivery notifications (UPS, FedEx, USPS tracking)
+  - Payment confirmations and due reminders
+  - Appointment reminders
+  - System notifications (low battery, updates)
+  - Transaction confirmations
+
+SCHEMA COMPLIANCE:
+
+All 400 entries follow the required JSON schema:
+{
+  "id": "5-digit string (03201-03600)",
+  "notification": {
+    "app": "package_name_lowercase",
+    "app_display_name": "User Readable Name",
+    "title": "Notification title (0-100 chars)",
+    "body": "Notification body text (0-500 chars)"
+  },
+  "classification": {
+    "folder": "Work|Personal|Promotions|Alerts",
+    "priority": 1|2|3|4|5
+  }
+}
+
+VALIDATION RESULTS:
+✓ All 400 entries valid JSON
+✓ All required fields present in every entry
+✓ All folder names correct (Work, Personal, Promotions, Alerts)
+✓ All priorities are integers 1-5
+✓ All IDs unique and in correct range
+✓ Realistic, non-duplicate content
+✓ Diverse apps, languages, and scenarios
+
+QUALITY STANDARDS MET:
+✓ Broad folder coverage (4/4 folders represented)
+✓ Multiple languages (6+ languages included)
+✓ Diverse apps (25+ different apps)
+✓ Realistic priority distribution (not all P5)
+✓ Realistic content (no Lorem ipsum, no placeholders)
+✓ Natural language variation (different message lengths, styles)
+✓ Context-appropriate classification
+✓ Realistic work terminology (git, jira, PRs, incidents)
+✓ Natural conversational language (personal messages)
+✓ Authentic marketing copy (promotions)
+✓ Realistic transaction amounts (banking alerts)
+
+GENERATION METHOD:
+- Python script with comprehensive app databases
+- Randomized content selection with meaningful distributions
+- Shuffled entry order for variety
+- Multilingual content templates
+- Realistic scenarios mapped to each folder
+
+Generated: 2026-01-07
