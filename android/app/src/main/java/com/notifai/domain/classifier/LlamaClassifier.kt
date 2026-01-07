@@ -21,7 +21,10 @@ class LlamaClassifier @Inject constructor(
         private const val MODEL_FILENAME = "Qwen3-0.6B-Q5_K_M.gguf"
 
         init {
-            System.loadLibrary("llama_jni")
+            // Load optimal library based on CPU features (dotprod, i8mm, etc.)
+            val loadedLib = LlamaLibraryLoader.loadOptimalLibrary()
+            android.util.Log.i(TAG, "Loaded native library: $loadedLib")
+            android.util.Log.i(TAG, "CPU capabilities: ${LlamaLibraryLoader.getCapabilitiesDescription()}")
         }
     }
 

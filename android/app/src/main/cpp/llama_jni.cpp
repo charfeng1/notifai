@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <cstring>
+#include <chrono>
 
 // Include llama.cpp headers
 #include "llama.h"
@@ -11,6 +12,18 @@
 #define LOG_TAG "LlamaJNI"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+
+// Performance metrics logging
+#define PERF_TAG "LlamaPerf"
+#define LOGP(...) __android_log_print(ANDROID_LOG_INFO, PERF_TAG, __VA_ARGS__)
+
+// High-resolution timing helper
+using Clock = std::chrono::high_resolution_clock;
+using TimePoint = std::chrono::time_point<Clock>;
+
+inline double elapsed_ms(TimePoint start, TimePoint end) {
+    return std::chrono::duration<double, std::milli>(end - start).count();
+}
 
 // Global model and context
 static llama_model* g_model = nullptr;
@@ -115,7 +128,11 @@ Java_com_notifai_domain_classifier_LlamaClassifier_nativeInference(
     // Reset sampler for new generation
     llama_sampler_reset(g_sampler);
 
-    // Process prompt tokens
+    // ===== PERFORMANCE TIMING START =====
+    TimePoint t_start_total = Clock::now();
+    TimePoint t_start_prefill = Clock::now();
+
+    // Process prompt tokens (prefill phase)
     for (int i = 0; i < n_tokens; i += 512) {
         int batch_size = std::min(512, n_tokens - i);
         llama_batch batch = llama_batch_get_one(tokens_list.data() + i, batch_size);
@@ -126,21 +143,38 @@ Java_com_notifai_domain_classifier_LlamaClassifier_nativeInference(
         }
     }
 
+    TimePoint t_end_prefill = Clock::now();
+    double prefill_ms = elapsed_ms(t_start_prefill, t_end_prefill);
+    double prefill_tps = (n_tokens / prefill_ms) * 1000.0;
+    LOGP("=== PREFILL: %d tokens in %.1f ms (%.1f tok/s) ===", n_tokens, prefill_ms, prefill_tps);
+
     LOGI("Prompt decoded, starting generation");
 
     // Generate response (max 20 tokens for testing)
     std::string response;
     int max_tokens = 20;  // Reduced for faster testing
+    int tokens_generated = 0;
+    TimePoint t_first_token;
+    TimePoint t_start_decode = Clock::now();
 
     for (int i = 0; i < max_tokens; i++) {
         // Sample next token
         llama_token new_token = llama_sampler_sample(g_sampler, g_ctx, -1);
+
+        // Record time to first token
+        if (i == 0) {
+            t_first_token = Clock::now();
+            double ttft = elapsed_ms(t_start_total, t_first_token);
+            LOGP("=== TIME TO FIRST TOKEN: %.1f ms ===", ttft);
+        }
 
         // Check for end of generation
         if (llama_token_is_eog(vocab, new_token)) {
             LOGI("EOG token reached at step %d", i);
             break;
         }
+
+        tokens_generated++;
 
         // Decode token to text
         char buf[256];
@@ -155,12 +189,17 @@ Java_com_notifai_domain_classifier_LlamaClassifier_nativeInference(
             LOGE("Failed to decode at generation step %d", i);
             break;
         }
-
-        // Log progress every 10 tokens
-        if (i % 10 == 0) {
-            LOGI("Generated %d tokens so far", i);
-        }
     }
+
+    TimePoint t_end_total = Clock::now();
+    double total_ms = elapsed_ms(t_start_total, t_end_total);
+    double decode_ms = elapsed_ms(t_start_decode, t_end_total);
+    double decode_tps = tokens_generated > 0 ? (tokens_generated / decode_ms) * 1000.0 : 0;
+
+    LOGP("=== DECODE: %d tokens in %.1f ms (%.2f tok/s) ===", tokens_generated, decode_ms, decode_tps);
+    LOGP("=== TOTAL: %.1f ms | Prefill: %.1f ms | Decode: %.1f ms ===", total_ms, prefill_ms, decode_ms);
+    LOGP("=== PERFORMANCE SUMMARY: TTFT=%.0fms, Decode=%.2f tok/s ===",
+         elapsed_ms(t_start_total, t_first_token), decode_tps);
 
     LOGI("Generation complete: %s", response.c_str());
     return env->NewStringUTF(response.c_str());
