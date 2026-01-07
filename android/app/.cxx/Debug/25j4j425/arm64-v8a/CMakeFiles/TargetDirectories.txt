@@ -1,3 +1,0 @@
-E:/projects/notif/android/app/.cxx/Debug/25j4j425/arm64-v8a/CMakeFiles/llama_jni.dir
-E:/projects/notif/android/app/.cxx/Debug/25j4j425/arm64-v8a/CMakeFiles/edit_cache.dir
-E:/projects/notif/android/app/.cxx/Debug/25j4j425/arm64-v8a/CMakeFiles/rebuild_cache.dir
