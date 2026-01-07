@@ -1,0 +1,194 @@
+name: Goose
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: goose-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  goose:
+    if: |
+      github.event.issue.pull_request &&
+      (contains(github.event.comment.body, ' /goose') || startsWith(github.event.comment.body, '/goose') ||
+       contains(github.event.comment.body, ' @goose') || startsWith(github.event.comment.body, '@goose'))
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    container:
+      image: ghcr.io/block/goose:latest
+      options: --user root
+      env:
+        GOOSE_PROVIDER: custom_zhipu
+        GOOSE_MODEL: glm-4.7
+        ANTHROPIC_HOST: https://open.bigmodel.cn/api/anthropic
+        CUSTOM_ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+        GOOSE_DISABLE_KEYRING: "1"
+        HOME: /tmp/goose-home
+
+    steps:
+      - name: Acknowledge trigger
+        run: |
+          curl -sL -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions" \
+            -d '{"content":"eyes"}'
+
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.issue.number }}/head
+          fetch-depth: 1
+
+      - name: Install tools
+        run: |
+          apt-get update
+          apt-get install -y gettext curl ripgrep
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          apt-get update
+          apt-get install -y gh
+
+      - name: Get PR info
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json title,body > /tmp/pr.json
+          gh pr diff ${{ github.event.issue.number }} --repo ${{ github.repository }} > /tmp/pr.diff
+
+      - name: Extract instructions
+        id: instructions
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+        run: |
+          INSTRUCTIONS=$(echo "$COMMENT_BODY" | sed -E 's#^(/goose|@goose)[[:space:]]*##')
+
+          if [ -z "$INSTRUCTIONS" ] || [ "$INSTRUCTIONS" = "$COMMENT_BODY" ]; then
+            INSTRUCTIONS="Perform a general code review focusing on code quality, bugs, and security."
+          fi
+
+          echo "instructions<<EOF" >> $GITHUB_OUTPUT
+          echo "$INSTRUCTIONS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create goose recipe
+        env:
+          PR_NUMBER: ${{ github.event.issue.number }}
+          PR_TITLE: ${{ github.event.issue.title }}
+          REVIEW_INSTRUCTIONS: ${{ steps.instructions.outputs.instructions }}
+        run: |
+          cat > /tmp/recipe_final.yaml << EOF
+          version: "1.0.0"
+          title: "Review Pull Request"
+          description: "Review PR #${PR_NUMBER}"
+
+          extensions:
+            - type: builtin
+              name: developer
+
+          instructions: |
+            You are reviewing a pull request. Focus on being helpful and constructive.
+
+            Review focus areas:
+            - Code quality and best practices
+            - Potential bugs or logic errors
+            - Security concerns
+            - Performance considerations
+
+            PR metadata: /tmp/pr.json
+            PR diff: /tmp/pr.diff
+
+            Custom instructions: ${REVIEW_INSTRUCTIONS}
+
+          prompt: |
+            Review PR #${PR_NUMBER}: ${PR_TITLE}
+
+            Instructions: ${REVIEW_INSTRUCTIONS}
+
+            Steps:
+            1. Read /tmp/pr.json and /tmp/pr.diff
+            2. Analyze the code changes
+            3. Write review to /tmp/review.md
+
+            Format your review in /tmp/review.md:
+
+            **Summary**
+            [Brief overview of what this PR does]
+
+            **Issues Found**
+            [List any bugs, security issues, or problems - be specific with file:line references]
+
+            **Suggestions**
+            [Optional improvements]
+
+            **Positive Notes**
+            [Good practices observed]
+
+            ---
+            Review by Goose with GLM-4.7
+
+            Do NOT make code changes. Only write the review.
+          EOF
+
+      - name: Run goose review
+        id: goose
+        run: |
+          mkdir -p $HOME/.local/share/goose/sessions
+          mkdir -p $HOME/.config/goose/custom_providers
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+          cat > $HOME/.config/goose/custom_providers/custom_zhipu.json << 'EOF'
+          {
+            "name": "custom_zhipu",
+            "engine": "anthropic",
+            "display_name": "ZHIPU",
+            "description": "Custom ZHIPU provider",
+            "api_key_env": "CUSTOM_ZHIPU_API_KEY",
+            "base_url": "https://open.bigmodel.cn/api/anthropic",
+            "models": [
+              {
+                "name": "glm-4.7",
+                "context_limit": 128000,
+                "supports_streaming": true
+              }
+            ],
+            "supports_streaming": true
+          }
+          EOF
+
+          goose run --recipe /tmp/recipe_final.yaml
+
+          if [ -f /tmp/review.md ]; then
+            echo "has_review=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_review=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post review
+        if: steps.goose.outputs.has_review == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat > /tmp/review_final.md << 'HEADER'
+          ## Goose AI Review (GLM-4.7)
+
+          HEADER
+          cat /tmp/review.md >> /tmp/review_final.md
+
+          gh pr comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body-file /tmp/review_final.md
+
+      - name: Post failure comment
+        if: failure() || steps.goose.outputs.has_review != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "Goose review could not be completed. Check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details."

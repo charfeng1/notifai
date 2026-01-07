@@ -1,0 +1,255 @@
+name: Goose Incremental Review
+
+on:
+  pull_request:
+    types: [synchronize]
+
+jobs:
+  goose-incremental-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
+    container:
+      image: ghcr.io/block/goose:latest
+      options: --user root
+      env:
+        GOOSE_PROVIDER: custom_zhipu
+        GOOSE_MODEL: glm-4.7
+        ANTHROPIC_HOST: https://open.bigmodel.cn/api/anthropic
+        CUSTOM_ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+        GOOSE_DISABLE_KEYRING: "1"
+        HOME: /tmp/goose-home
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup git safe directory
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Fetch base branch for comparison
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1
+
+      - name: Install tools
+        run: |
+          apt-get update
+          apt-get install -y gettext curl ripgrep jq
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          apt-get update
+          apt-get install -y gh
+
+      - name: Get PR diff and context
+        id: diff
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          echo "base_sha=$BASE_SHA" >> $GITHUB_OUTPUT
+          echo "head_sha=$HEAD_SHA" >> $GITHUB_OUTPUT
+          echo "commit_range=${BASE_SHA}...${HEAD_SHA}" >> $GITHUB_OUTPUT
+
+          gh pr view ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --json title,body > /tmp/pr.json
+
+          # Use local git diff to avoid GitHub API limits
+          git diff origin/${{ github.event.pull_request.base.ref }}...HEAD > /tmp/pr.diff
+
+          # Build chronological timeline of commits and reviews
+          echo "Building PR timeline..."
+
+          # Fetch commits as JSON events
+          if ! gh api --paginate repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/commits \
+            --jq '.[] | {
+              type: "commit",
+              timestamp: .commit.author.date,
+              sha: .sha[0:7],
+              author: .commit.author.name,
+              message: .commit.message
+            }' > /tmp/timeline_events.jsonl; then
+            echo "ERROR: Failed to fetch commits from GitHub API" >&2
+            exit 1
+          fi
+
+          # Fetch inline review comments as JSON events
+          if ! gh api --paginate repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments \
+            --jq '.[] | {
+              type: "review_comment",
+              timestamp: .created_at,
+              author: .user.login,
+              path: .path,
+              line: (.line // .original_line // "(file-level)"),
+              body: .body
+            }' >> /tmp/timeline_events.jsonl; then
+            echo "ERROR: Failed to fetch review comments from GitHub API" >&2
+            exit 1
+          fi
+
+          # Fetch PR discussion comments as JSON events
+          if ! gh api --paginate repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
+            --jq '.[] | {
+              type: "discussion_comment",
+              timestamp: .created_at,
+              author: .user.login,
+              body: .body
+            }' >> /tmp/timeline_events.jsonl; then
+            echo "ERROR: Failed to fetch discussion comments from GitHub API" >&2
+            exit 1
+          fi
+
+          # Sort by timestamp and format as readable timeline using jq
+          echo "=== PR Timeline ===" > /tmp/previous_comments.txt
+          echo "Events shown in chronological order to help understand which reviews addressed which commits." >> /tmp/previous_comments.txt
+          echo "" >> /tmp/previous_comments.txt
+
+          if ! jq -s 'sort_by(.timestamp) | .[] |
+            if .type == "commit" then
+              "--- COMMIT [\(.sha)] at \(.timestamp) ---\nAuthor: \(.author)\nMessage: \(.message | split("\n\n")[0] | gsub("\n"; " "))\n"
+            elif .type == "review_comment" then
+              "REVIEW by \(.author) at \(.timestamp)\n   File: \(.path):\(.line)\n\(.body | gsub("\n"; "\n   "))\n---"
+            elif .type == "discussion_comment" then
+              "COMMENT by \(.author) at \(.timestamp)\n\(.body | gsub("\n"; "\n   "))\n---"
+            else empty end
+          ' -r /tmp/timeline_events.jsonl >> /tmp/previous_comments.txt; then
+            echo "ERROR: Failed to format timeline with jq" >&2
+            exit 1
+          fi
+
+          if [ ! -s /tmp/previous_comments.txt ]; then
+            echo "ERROR: Timeline file is empty or not created" >&2
+            exit 1
+          fi
+
+          COMMIT_COUNT=$(jq -s '[.[] | select(.type=="commit")] | length' /tmp/timeline_events.jsonl)
+          REVIEW_COUNT=$(jq -s '[.[] | select(.type=="review_comment")] | length' /tmp/timeline_events.jsonl)
+          DISCUSSION_COUNT=$(jq -s '[.[] | select(.type=="discussion_comment")] | length' /tmp/timeline_events.jsonl)
+          echo "Timeline built: $COMMIT_COUNT commits, $REVIEW_COUNT review comments, $DISCUSSION_COUNT discussion comments"
+
+      - name: Create goose recipe
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          COMMIT_RANGE: ${{ steps.diff.outputs.commit_range }}
+        run: |
+          cat > /tmp/recipe.yaml << 'EOF'
+          version: "1.0.0"
+          title: "Review Pull Request (Incremental)"
+          description: "Incremental review for PR #${PR_NUMBER}"
+
+          extensions:
+            - type: builtin
+              name: developer
+
+          instructions: |
+            You are reviewing NEW COMMITS on a pull request. Focus on incremental changes.
+
+            Review focus areas:
+            - Whether previous review feedback was addressed
+            - Any new issues introduced in the latest changes
+            - Code quality of the new changes only
+
+            PR metadata: /tmp/pr.json
+            PR diff: /tmp/pr.diff
+            PR timeline: /tmp/previous_comments.txt (chronological commits + reviews)
+            Commit range: ${COMMIT_RANGE}
+
+          prompt: |
+            Incremental review for PR #${PR_NUMBER}: ${PR_TITLE}
+
+            This is an INCREMENTAL review. New commits have been pushed to this PR.
+
+            Steps:
+            1. Read /tmp/pr.json for PR context
+            2. Read /tmp/previous_comments.txt - this shows a CHRONOLOGICAL TIMELINE of:
+               - COMMIT entries (showing when code was pushed)
+               - REVIEW entries (showing feedback given after each commit)
+               - DISCUSSION entries (general PR comments)
+               Use this to understand which feedback was already addressed by subsequent commits.
+            3. Read /tmp/pr.diff to see the current state of changes
+            4. Focus on the latest commits in range: ${COMMIT_RANGE}
+            5. Determine which previous review comments have been addressed vs still open
+            6. Write review to /tmp/review.md
+
+            Format your review in /tmp/review.md:
+
+            **Summary**
+            [What changed in this update]
+
+            **Previous Feedback Status**
+            [Were previous issues addressed?]
+
+            **New Issues Found**
+            [Any new problems introduced - be specific with file:line references]
+
+            **Suggestions**
+            [Optional improvements]
+
+            ---
+            Incremental Review by Goose with GLM-4.7
+
+            Do NOT repeat feedback that was already given. Only comment on new or unresolved issues.
+            Do NOT make code changes. Only write the review.
+          EOF
+
+          envsubst '$PR_NUMBER $PR_TITLE $COMMIT_RANGE' < /tmp/recipe.yaml > /tmp/recipe_final.yaml
+
+      - name: Run goose review
+        id: goose
+        timeout-minutes: 5
+        run: |
+          mkdir -p $HOME/.local/share/goose/sessions
+          mkdir -p $HOME/.config/goose/custom_providers
+
+          cat > $HOME/.config/goose/custom_providers/custom_zhipu.json << 'PROVIDER_EOF'
+          {
+            "name": "custom_zhipu",
+            "engine": "anthropic",
+            "display_name": "ZHIPU",
+            "description": "Custom ZHIPU provider",
+            "api_key_env": "CUSTOM_ZHIPU_API_KEY",
+            "base_url": "https://open.bigmodel.cn/api/anthropic",
+            "models": [
+              {
+                "name": "glm-4.7",
+                "context_limit": 128000,
+                "supports_streaming": true
+              }
+            ],
+            "supports_streaming": true
+          }
+          PROVIDER_EOF
+
+          goose run --recipe /tmp/recipe_final.yaml
+
+          if [ -f /tmp/review.md ]; then
+            echo "has_review=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_review=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post review
+        if: steps.goose.outputs.has_review == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat > /tmp/review_final.md << 'HEADER'
+          ## Goose AI Incremental Review (GLM-4.7)
+
+          HEADER
+          cat /tmp/review.md >> /tmp/review_final.md
+
+          gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body-file /tmp/review_final.md
+
+      - name: Post failure comment
+        if: failure() || steps.goose.outputs.has_review != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "Goose incremental review could not be completed. Check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details."
