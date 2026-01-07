@@ -1,0 +1,218 @@
+name: OpenCode Incremental Review
+
+on:
+  pull_request:
+    types: [synchronize]
+
+jobs:
+  opencode-incremental-review:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Fetch base branch for comparison
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1
+
+      - name: Get PR diff
+        id: diff
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          echo "base_sha=$BASE_SHA" >> $GITHUB_OUTPUT
+          echo "head_sha=$HEAD_SHA" >> $GITHUB_OUTPUT
+          echo "commit_range=${BASE_SHA}...${HEAD_SHA}" >> $GITHUB_OUTPUT
+
+          git diff origin/${{ github.event.pull_request.base.ref }}...HEAD > /tmp/pr.diff
+
+          if [[ "${{ github.actor }}" == *"[bot]"* ]]; then
+            echo "is_bot=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_bot=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run OpenCode Incremental Review (Attempt 1)
+        id: incremental1
+        if: steps.diff.outputs.is_bot == 'false'
+        continue-on-error: true
+        uses: anomalyco/opencode/github@latest
+        env:
+          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+        with:
+          model: zai-coding-plan/glm-4.7
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+            COMMIT RANGE: ${{ steps.diff.outputs.commit_range }}
+
+            This is an INCREMENTAL review. New commits have been pushed to this PR.
+
+            Please:
+            1. Review the changes in this PR (use `git diff ${{ steps.diff.outputs.commit_range }}` to see them)
+            2. Check if the previous review comments on this PR have been addressed
+            3. Provide feedback on any remaining issues or new concerns
+
+            Focus on:
+            - Whether previous review feedback was addressed
+            - Any new issues introduced in the latest changes
+            - Code quality of the new changes only
+
+            Do NOT repeat feedback that was already given. Only comment on new or unresolved issues.
+
+      - name: Wait before retry
+        if: steps.diff.outputs.is_bot == 'false' && steps.incremental1.outcome == 'failure'
+        run: sleep 30
+
+      - name: Run OpenCode Incremental Review (Attempt 2)
+        id: incremental2
+        if: steps.diff.outputs.is_bot == 'false' && steps.incremental1.outcome == 'failure'
+        continue-on-error: true
+        uses: anomalyco/opencode/github@latest
+        env:
+          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+        with:
+          model: zai-coding-plan/glm-4.7
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+            COMMIT RANGE: ${{ steps.diff.outputs.commit_range }}
+
+            This is an INCREMENTAL review. New commits have been pushed to this PR.
+
+            Please:
+            1. Review the changes in this PR (use `git diff ${{ steps.diff.outputs.commit_range }}` to see them)
+            2. Check if the previous review comments on this PR have been addressed
+            3. Provide feedback on any remaining issues or new concerns
+
+            Focus on:
+            - Whether previous review feedback was addressed
+            - Any new issues introduced in the latest changes
+            - Code quality of the new changes only
+
+            Do NOT repeat feedback that was already given. Only comment on new or unresolved issues.
+
+      - name: Wait before final retry
+        if: steps.diff.outputs.is_bot == 'false' && steps.incremental1.outcome == 'failure' && steps.incremental2.outcome == 'failure'
+        run: sleep 30
+
+      - name: Run OpenCode Incremental Review (Attempt 3)
+        if: steps.diff.outputs.is_bot == 'false' && steps.incremental1.outcome == 'failure' && steps.incremental2.outcome == 'failure'
+        uses: anomalyco/opencode/github@latest
+        env:
+          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+        with:
+          model: zai-coding-plan/glm-4.7
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+            COMMIT RANGE: ${{ steps.diff.outputs.commit_range }}
+
+            This is an INCREMENTAL review. New commits have been pushed to this PR.
+
+            Please:
+            1. Review the changes in this PR (use `git diff ${{ steps.diff.outputs.commit_range }}` to see them)
+            2. Check if the previous review comments on this PR have been addressed
+            3. Provide feedback on any remaining issues or new concerns
+
+            Focus on:
+            - Whether previous review feedback was addressed
+            - Any new issues introduced in the latest changes
+            - Code quality of the new changes only
+
+            Do NOT repeat feedback that was already given. Only comment on new or unresolved issues.
+
+      - name: Bot Commit Review (Fallback)
+        if: steps.diff.outputs.is_bot == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+        run: |
+          set -e
+
+          echo "Bot actor detected: ${{ github.actor }}"
+          echo "Using direct API fallback for incremental review..."
+
+          if [[ ! -f /tmp/pr.diff ]]; then
+            echo "::error::Diff file not found at /tmp/pr.diff"
+            exit 1
+          fi
+
+          DIFF_SIZE=$(wc -c < /tmp/pr.diff)
+          MAX_DIFF_SIZE=50000
+          TRUNCATION_WARNING=""
+          if [[ $DIFF_SIZE -gt $MAX_DIFF_SIZE ]]; then
+            TRUNCATION_WARNING="Note: Diff was truncated from ${DIFF_SIZE} bytes to 50KB for review."
+            echo "::warning::Diff truncated from ${DIFF_SIZE} bytes to ${MAX_DIFF_SIZE}"
+          fi
+
+          FENCE='```'
+          DIFF_CONTENT=$(head -c $MAX_DIFF_SIZE /tmp/pr.diff)
+          PROMPT=$(jq -n \
+            --arg diff "$DIFF_CONTENT" \
+            --arg pr "${{ github.event.pull_request.number }}" \
+            --arg actor "${{ github.actor }}" \
+            --arg range "${{ steps.diff.outputs.commit_range }}" \
+            --arg fence "$FENCE" \
+            '"You are reviewing an incremental commit on PR #" + $pr + ".\n\nThe commit was made by: " + $actor + "\nCommit range: " + $range + "\n\nHere is the diff:\n" + $fence + "\n" + $diff + "\n" + $fence + "\n\nPlease provide a thorough incremental review covering:\n- Any bugs, issues, or potential problems in the new changes\n- Whether the changes look correct and follow best practices\n- Code quality, readability, and maintainability\n- Security considerations if applicable\n- Suggestions for improvement\n\nBe detailed in your analysis."')
+
+          echo "Calling ZHIPU API..."
+          HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "https://open.bigmodel.cn/api/anthropic/v1/messages" \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: ${ZHIPU_API_KEY}" \
+            -d "$(jq -n \
+              --arg prompt "$PROMPT" \
+              '{
+                model: "glm-4.7",
+                max_tokens: 8192,
+                messages: [{role: "user", content: $prompt}]
+              }')")
+
+          HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n1)
+          RESPONSE_BODY=$(echo "$HTTP_RESPONSE" | sed '$d')
+
+          echo "API responded with status: $HTTP_STATUS"
+
+          if [[ "$HTTP_STATUS" != "200" ]]; then
+            echo "::error::API request failed with status $HTTP_STATUS"
+            REVIEW_RESPONSE="Review could not be generated due to an API error (status: $HTTP_STATUS). Please check the workflow logs for details."
+          else
+            REVIEW_RESPONSE=$(echo "$RESPONSE_BODY" | jq -r '.content[0].text // empty')
+            if [[ -z "$REVIEW_RESPONSE" ]]; then
+              API_ERROR=$(echo "$RESPONSE_BODY" | jq -r '.error.type // empty')
+              if [[ -n "$API_ERROR" ]]; then
+                echo "::error::API returned error type: $API_ERROR"
+                REVIEW_RESPONSE="Review could not be generated due to an API error. Please check the workflow logs for details."
+              else
+                REVIEW_RESPONSE="Review could not be generated. The API returned an unexpected response format."
+              fi
+            fi
+          fi
+
+          COMMENT_BODY="## OpenCode Incremental Review (Bot Commit Fallback)
+
+          **Commit by:** \`${{ github.actor }}\`
+          **Commit range:** \`${{ steps.diff.outputs.commit_range }}\`
+
+          ${TRUNCATION_WARNING}
+
+          ${REVIEW_RESPONSE}
+
+          ---
+          *This review was generated using the direct API fallback because the commit was made by a bot actor.*"
+
+          echo "Posting review comment..."
+          if ! gh pr comment ${{ github.event.pull_request.number }} --body "$COMMENT_BODY"; then
+            echo "::error::Failed to post review comment"
+            exit 1
+          fi
+
+          echo "Review posted successfully!"
