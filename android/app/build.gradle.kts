@@ -26,10 +26,9 @@ android {
 
         externalNativeBuild {
             cmake {
-                cppFlags += listOf("-std=c++17", "-O3", "-DNDEBUG")
+                cppFlags += listOf("-std=c++17", "-O3", "-DNDEBUG", "-march=armv8.2-a+fp16")
                 arguments += listOf(
                     "-DANDROID_STL=c++_shared",
-                    "-DLLAMA_NATIVE=ON",
                     "-DGGML_USE_CPU=ON"
                 )
             }

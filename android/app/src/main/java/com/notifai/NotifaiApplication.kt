@@ -9,5 +9,6 @@ class NotifaiApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         // Application initialization
+        // Model will be lazy-initialized on first classification
     }
 }

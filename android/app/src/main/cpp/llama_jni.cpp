@@ -45,8 +45,9 @@ Java_com_notifai_domain_classifier_LlamaClassifier_nativeInit(
     // Context parameters
     llama_context_params ctx_params = llama_context_default_params();
     ctx_params.n_ctx = 2048;
-    ctx_params.n_batch = 512;
-    ctx_params.n_threads = 8; // Utilize all Pixel 7 Pro cores
+    ctx_params.n_batch = 128;  // Reduced for better performance
+    ctx_params.n_threads = 4;  // Fewer threads to reduce contention
+    ctx_params.n_threads_batch = 4;  // Match decode threads
 
     // Create context
     g_ctx = llama_new_context_with_model(g_model, ctx_params);
@@ -77,24 +78,31 @@ Java_com_notifai_domain_classifier_LlamaClassifier_nativeInference(
     }
 
     const char* prompt_text = env->GetStringUTFChars(prompt, nullptr);
-    int prompt_len = strlen(prompt_text);
-    LOGI("Running inference, prompt length: %d", prompt_len);
+    LOGI("Running inference, prompt: %s", prompt_text);
 
-    // Tokenize prompt
+    // Format using Qwen3 chat template with /no_think to disable thinking mode
+    // Qwen3 format: <|im_start|>system\n/no_think\nYou are Qwen.<|im_end|>\n<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n
+    std::string formatted_prompt = "<|im_start|>system\n/no_think\nYou are Qwen.<|im_end|>\n<|im_start|>user\n";
+    formatted_prompt += prompt_text;
+    formatted_prompt += "<|im_end|>\n<|im_start|>assistant\n";
+
+    env->ReleaseStringUTFChars(prompt, prompt_text);
+    LOGI("Formatted prompt: %s", formatted_prompt.c_str());
+
+    // Tokenize the formatted prompt
     std::vector<llama_token> tokens_list;
-    tokens_list.resize(ctx_params.n_ctx);
+    tokens_list.resize(llama_n_ctx(g_ctx));
 
+    const llama_vocab* vocab = llama_model_get_vocab(g_model);
     int n_tokens = llama_tokenize(
-            g_model,
-            prompt_text,
-            prompt_len,
+            vocab,
+            formatted_prompt.c_str(),
+            formatted_prompt.length(),
             tokens_list.data(),
             tokens_list.size(),
             true,  // add_special
             true   // parse_special
     );
-
-    env->ReleaseStringUTFChars(prompt, prompt_text);
 
     if (n_tokens < 0) {
         LOGE("Tokenization failed");
@@ -104,56 +112,57 @@ Java_com_notifai_domain_classifier_LlamaClassifier_nativeInference(
     tokens_list.resize(n_tokens);
     LOGI("Tokenized to %d tokens", n_tokens);
 
-    // Clear previous context
-    llama_kv_cache_clear(g_ctx);
+    // Reset sampler for new generation
+    llama_sampler_reset(g_sampler);
 
-    // Create batch for prompt
-    llama_batch batch = llama_batch_get_one(tokens_list.data(), n_tokens);
+    // Process prompt tokens
+    for (int i = 0; i < n_tokens; i += 512) {
+        int batch_size = std::min(512, n_tokens - i);
+        llama_batch batch = llama_batch_get_one(tokens_list.data() + i, batch_size);
 
-    // Decode prompt
-    if (llama_decode(g_ctx, batch) != 0) {
-        LOGE("Failed to decode prompt");
-        return env->NewStringUTF("");
+        if (llama_decode(g_ctx, batch) != 0) {
+            LOGE("Failed to decode prompt batch at position %d", i);
+            return env->NewStringUTF("");
+        }
     }
 
-    // Generate response (max 100 tokens for JSON)
+    LOGI("Prompt decoded, starting generation");
+
+    // Generate response (max 20 tokens for testing)
     std::string response;
-    int max_tokens = 100;
-    int n_generated = 0;
+    int max_tokens = 20;  // Reduced for faster testing
 
     for (int i = 0; i < max_tokens; i++) {
         // Sample next token
         llama_token new_token = llama_sampler_sample(g_sampler, g_ctx, -1);
 
-        // Check for EOS
-        if (llama_token_is_eog(g_model, new_token)) {
+        // Check for end of generation
+        if (llama_token_is_eog(vocab, new_token)) {
+            LOGI("EOG token reached at step %d", i);
             break;
         }
 
         // Decode token to text
-        char buf[128];
-        int n = llama_token_to_piece(g_model, new_token, buf, sizeof(buf), 0, true);
+        char buf[256];
+        int n = llama_token_to_piece(vocab, new_token, buf, sizeof(buf), 0, true);
         if (n > 0) {
             response.append(buf, n);
         }
 
-        // Check if we have complete JSON (simple heuristic)
-        if (response.find("}") != std::string::npos && response.find("{") != std::string::npos) {
-            break;
-        }
-
-        // Continue generation
-        batch = llama_batch_get_one(&new_token, 1);
+        // Continue generation with single token
+        llama_batch batch = llama_batch_get_one(&new_token, 1);
         if (llama_decode(g_ctx, batch) != 0) {
-            LOGE("Failed to decode generation step %d", i);
+            LOGE("Failed to decode at generation step %d", i);
             break;
         }
 
-        n_generated++;
+        // Log progress every 10 tokens
+        if (i % 10 == 0) {
+            LOGI("Generated %d tokens so far", i);
+        }
     }
 
-    LOGI("Generated %d tokens: %s", n_generated, response.c_str());
-
+    LOGI("Generation complete: %s", response.c_str());
     return env->NewStringUTF(response.c_str());
 }
 

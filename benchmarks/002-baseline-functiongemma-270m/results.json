@@ -1,0 +1,157 @@
+{
+  "model": "E:\\projects\\notif\\models\\functiongemma-270m",
+  "total": 100,
+  "folder_accuracy": 0.35,
+  "priority_accuracy": 0.02,
+  "parse_failure_rate": 0.02,
+  "errors": [
+    {
+      "example": 2,
+      "app": "WeChat",
+      "title": "妈妈",
+      "expected_folder": "Personal",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 3,
+      "app": "Amazon",
+      "title": "Your order is on its way",
+      "expected_folder": "Alerts",
+      "predicted_folder": "Order Details"
+    },
+    {
+      "example": 4,
+      "app": "Target",
+      "title": "Exclusive: 40% off home",
+      "expected_folder": "Promotions",
+      "predicted_folder": "Home"
+    },
+    {
+      "example": 6,
+      "app": "Chase Mobile",
+      "title": "Security Alert",
+      "expected_folder": "Alerts",
+      "predicted_folder": "Security Alerts"
+    },
+    {
+      "example": 7,
+      "app": "Telegram",
+      "title": "Alex",
+      "expected_folder": "Personal",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 10,
+      "app": "FedEx",
+      "title": "Package delivered",
+      "expected_folder": "Alerts",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 11,
+      "app": "WhatsApp",
+      "title": "Dad",
+      "expected": {
+        "folder": "Personal",
+        "priority": 3
+      },
+      "output": "I apologize, but I cannot assist with booking or managing travel arrangements. My current capabiliti",
+      "error": "Parse failure"
+    },
+    {
+      "example": 14,
+      "app": "Uber",
+      "title": "Your ride is arriving",
+      "expected_folder": "Alerts",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 16,
+      "app": "WeChat",
+      "title": "李明",
+      "expected_folder": "Personal",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 18,
+      "app": "Bank of America",
+      "title": "Payment received",
+      "expected_folder": "Alerts",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 19,
+      "app": "DoorDash",
+      "title": "Your order is ready!",
+      "expected_folder": "Alerts",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 20,
+      "app": "App Store",
+      "title": "Spotify Premium offer",
+      "expected_folder": "Promotions",
+      "predicted_folder": "App Store"
+    },
+    {
+      "example": 22,
+      "app": "Messenger",
+      "title": "Sophie",
+      "expected_folder": "Personal",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 24,
+      "app": "Walgreens",
+      "title": "Prescription ready",
+      "expected_folder": "Alerts",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 25,
+      "app": "Netflix",
+      "title": "New release: The Last Shift",
+      "expected_folder": "Promotions",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 27,
+      "app": "WhatsApp",
+      "title": "Family Group",
+      "expected_folder": "Personal",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 29,
+      "app": "Gmail",
+      "title": "Alexander Davis",
+      "expected": {
+        "folder": "Work",
+        "priority": 4
+      },
+      "output": "I apologize, but I cannot assist with drafting or reviewing content related to financial expense rep",
+      "error": "Parse failure"
+    },
+    {
+      "example": 30,
+      "app": "Google Pay",
+      "title": "Payment failed",
+      "expected_folder": "Alerts",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 33,
+      "app": "Telegram",
+      "title": "Travel Group",
+      "expected_folder": "Personal",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 34,
+      "app": "Airbnb",
+      "title": "Your booking confirmed",
+      "expected_folder": "Alerts",
+      "predicted_folder": "Work"
+    }
+  ]
+}

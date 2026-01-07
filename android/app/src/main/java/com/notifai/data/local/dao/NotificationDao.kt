@@ -4,6 +4,11 @@ import androidx.room.*
 import com.notifai.data.local.entity.NotificationEntity
 import kotlinx.coroutines.flow.Flow
 
+data class FolderCount(
+    val folder: String,
+    val count: Int
+)
+
 @Dao
 interface NotificationDao {
     @Query("SELECT * FROM notifications ORDER BY timestamp DESC")
@@ -13,7 +18,7 @@ interface NotificationDao {
     fun getNotificationsByFolder(folder: String): Flow<List<NotificationEntity>>
 
     @Query("SELECT folder, COUNT(*) as count FROM notifications GROUP BY folder")
-    fun getFolderCounts(): Flow<Map<String, Int>>
+    fun getFolderCounts(): Flow<List<FolderCount>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(notification: NotificationEntity)

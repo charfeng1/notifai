@@ -32,14 +32,27 @@ class ClassifyNotificationUseCase @Inject constructor(
         return try {
             // Build prompt
             val prompt = promptBuilder.buildPrompt(appName, title, body)
-            Log.d(TAG, "Built prompt for $appName: $title")
+            Log.d(TAG, "Classifying notification from $appName: $title")
 
-            // Run inference
+            // Run AI inference (will auto-initialize on first use)
             val response = llamaClassifier.classify(prompt)
 
             if (response.isEmpty()) {
-                Log.e(TAG, "Empty response from classifier")
-                return Result.failure(Exception("Empty classifier response"))
+                Log.w(TAG, "Empty response from classifier, using defaults")
+                // Save with defaults if classification fails
+                val notification = NotificationEntity(
+                    id = UUID.randomUUID().toString(),
+                    packageName = packageName,
+                    appName = appName,
+                    title = title,
+                    body = body,
+                    timestamp = timestamp,
+                    folder = DEFAULT_FOLDER,
+                    priority = DEFAULT_PRIORITY,
+                    isRead = false
+                )
+                notificationRepository.insert(notification)
+                return Result.success(Unit)
             }
 
             // Parse result

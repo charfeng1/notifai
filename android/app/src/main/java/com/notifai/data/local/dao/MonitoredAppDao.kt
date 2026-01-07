@@ -9,6 +9,12 @@ interface MonitoredAppDao {
     @Query("SELECT * FROM monitored_apps ORDER BY appName ASC")
     fun getAllApps(): Flow<List<MonitoredAppEntity>>
 
+    @Query("SELECT * FROM monitored_apps")
+    suspend fun getAllAppsOnce(): List<MonitoredAppEntity>
+
+    @Query("SELECT * FROM monitored_apps WHERE packageName = :packageName")
+    suspend fun getApp(packageName: String): MonitoredAppEntity?
+
     @Query("SELECT isEnabled FROM monitored_apps WHERE packageName = :packageName")
     suspend fun isAppMonitored(packageName: String): Boolean?
 

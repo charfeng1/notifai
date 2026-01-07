@@ -38,14 +38,7 @@ class ClassificationService : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-
-        // Initialize model on first service start
-        serviceScope.launch {
-            if (!llamaClassifier.initialize()) {
-                Log.e(TAG, "Failed to initialize model")
-                stopSelf()
-            }
-        }
+        Log.d(TAG, "ClassificationService created")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -63,13 +56,15 @@ class ClassificationService : Service() {
                 try {
                     Log.d(TAG, "Processing notification from $appName")
 
-                    // Classify notification
+                    // Classify notification (model initialized in Application class)
                     val result = classifyNotificationUseCase(
                         packageName, appName, title, body, timestamp
                     )
 
                     if (result.isFailure) {
                         Log.e(TAG, "Classification failed: ${result.exceptionOrNull()}")
+                    } else {
+                        Log.i(TAG, "Classification successful for $appName")
                     }
 
                 } catch (e: Exception) {
