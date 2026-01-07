@@ -36,8 +36,8 @@ Each entry must have:
 ### Field Rules
 
 - `id`: Unique identifier (sequential numbers are fine: "001", "002", etc.)
-- `app`: Package name or lowercase app identifier (e.g., "slack", "gmail", "wechat")
-- `app_display_name`: User-facing app name (e.g., "Slack", "Gmail", "WeChat")
+- `app`: **Android package name** in reverse domain notation (e.g., "com.slack", "com.google.android.gm", "com.tencent.mm")
+- `app_display_name`: User-facing app name (e.g., "Slack", "Gmail", "微信")
 - `title`: Short notification title (0-100 chars)
 - `body`: Notification body text (0-500 chars)
 - `folder`: Must be exactly one of: `Work`, `Personal`, `Promotions`, `Alerts`
@@ -46,7 +46,7 @@ Each entry must have:
 ## Folder Definitions
 
 ### Work
-Professional messages from work apps like Slack, Jira, Teams, work email, GitHub, Linear, etc.
+Professional messages from work apps like Slack, Jira, Teams, work email, GitHub, Linear, Feishu, DingTalk, etc.
 
 **Examples:**
 - Slack messages from work channels
@@ -54,6 +54,8 @@ Professional messages from work apps like Slack, Jira, Teams, work email, GitHub
 - Work email notifications
 - GitHub PR reviews
 - Calendar reminders for meetings
+- Feishu/Lark enterprise messaging (Chinese)
+- DingTalk/钉钉 work notifications (Chinese)
 
 **Priority guidelines:**
 - 5: Production incidents, urgent escalations, immediate blockers
@@ -70,6 +72,8 @@ Messages from friends and family via messaging apps.
 - SMS from family members
 - iMessage conversations
 - Social media DMs from friends
+- Douyin/抖音 notifications (Chinese short video)
+- Xiaohongshu/小红书/RedNote social updates (Chinese lifestyle)
 
 **Priority guidelines:**
 - 5: Emergency messages from family
@@ -124,11 +128,11 @@ Generate diverse notifications across:
    - Work tools are typically English
    - Shopping apps may be in user's native language
 
-2. **Apps**: Cover wide range of common apps
-   - Work: Slack, Teams, Gmail, Outlook, Jira, GitHub, Linear, Notion
-   - Personal: WhatsApp, WeChat, Telegram, iMessage, Facebook Messenger
-   - Promotions: Amazon, Shopee, Lazada, Target, Walmart, newsletters
-   - Alerts: Chase Bank, UPS, FedEx, Uber, DoorDash, system apps
+2. **Apps**: Cover wide range of common apps with **real Android package names**
+   - Work: Slack (com.slack), Teams (com.microsoft.teams), Gmail (com.google.android.gm), Feishu/飞书 (com.ss.android.lark), DingTalk/钉钉 (com.alibaba.android.rimet), Jira, GitHub, Notion
+   - Personal: WhatsApp (com.whatsapp), WeChat/微信 (com.tencent.mm), Douyin/抖音 (com.ss.android.ugc.aweme), RedNote/小红书 (com.xingin.xhs), Telegram (org.telegram.messenger), Messenger, Instagram, LINE
+   - Promotions: Amazon (com.amazon.mShop.android.shopping), Shopee (com.shopee.ph), Lazada, Target (com.target.ui), Taobao/淘宝, JD/京东
+   - Alerts: Chase (com.chase.sig.android), UPS (com.ups.mobile.android), FedEx (com.fedex.ida.android), Uber (com.ubercab), DoorDash, system (android)
 
 3. **Scenarios**: Realistic use cases
    - Work incidents, PR reviews, meeting reminders
@@ -152,6 +156,27 @@ Generate diverse notifications across:
 - **Banking alerts** should have realistic transaction amounts and merchant names
 - **Delivery notifications** should include tracking numbers, delivery time windows
 
+### Chinese App Requirements
+
+**IMPORTANT:** At least 30-40% of your generated notifications should be from Chinese apps with natural Chinese content.
+
+**Chinese Work Apps (Feishu/DingTalk):**
+- Package names: `com.ss.android.lark` (Feishu/飞书), `com.alibaba.android.rimet` (DingTalk/钉钉)
+- Content: Project updates, meeting reminders, approval requests, team messages
+- Use natural Chinese business language: "紧急通知", "会议提醒", "项目进度", "审批", "考勤"
+- Examples: "生产环境故障", "客户要求今天下午交付", "请审查代码"
+
+**Chinese Personal Apps:**
+- WeChat (com.tencent.mm/微信): Family messages, friend chat, group conversations
+- Douyin (com.ss.android.ugc.aweme/抖音): Video likes, comments, live stream notifications
+- RedNote (com.xingin.xhs/小红书): Social updates, product recommendations, comments
+
+**Chinese Personal Content Examples:**
+- Family urgent: "爸爸住院了快来医院", "妈妈找你有急事"
+- Family normal: "到家了吗", "今晚回来吃饭吗", "外面冷记得穿外套"
+- Friends: "周末去哪玩", "一起吃饭吗", "你看到我发的消息了吗"
+- Social: "有人点赞了你的视频", "有人评论了你的笔记", "你关注的博主更新了"
+
 ### What to Avoid
 
 - Don't make every notification urgent (priority 5)
@@ -174,14 +199,24 @@ Your synthetic data will be validated against the schema. Ensure:
 ## Example Set
 
 ```jsonl
-{"id": "001", "notification": {"app": "slack", "app_display_name": "Slack", "title": "#incidents", "body": "PROD DOWN - payments service returning 500s"}, "classification": {"folder": "Work", "priority": 5}}
-{"id": "002", "notification": {"app": "wechat", "app_display_name": "WeChat", "title": "妈妈", "body": "到家了吗？外面冷记得穿外套"}, "classification": {"folder": "Personal", "priority": 3}}
-{"id": "003", "notification": {"app": "amazon", "app_display_name": "Amazon", "title": "Your order has shipped!", "body": "Good news! Your package will arrive tomorrow by 8pm. Track: TBA123456789"}, "classification": {"folder": "Alerts", "priority": 3}}
-{"id": "004", "notification": {"app": "target", "app_display_name": "Target", "title": "🎯 50% OFF Everything!", "body": "Flash sale ends tonight! Use code SAVE50 at checkout. Shop now →"}, "classification": {"folder": "Promotions", "priority": 2}}
-{"id": "005", "notification": {"app": "gmail", "app_display_name": "Gmail", "title": "Sarah Chen", "body": "Can you review the Q1 deck before the board meeting tomorrow?"}, "classification": {"folder": "Work", "priority": 4}}
-{"id": "006", "notification": {"app": "chase", "app_display_name": "Chase Mobile", "title": "Security Alert", "body": "We detected a login from a new device in London, UK. Was this you?"}, "classification": {"folder": "Alerts", "priority": 5}}
+{"id": "001", "notification": {"app": "com.slack", "app_display_name": "Slack", "title": "#incidents", "body": "PROD DOWN - payments service returning 500s"}, "classification": {"folder": "Work", "priority": 5}}
+{"id": "002", "notification": {"app": "com.tencent.mm", "app_display_name": "微信", "title": "妈妈", "body": "到家了吗？外面冷记得穿外套"}, "classification": {"folder": "Personal", "priority": 3}}
+{"id": "003", "notification": {"app": "com.ss.android.lark", "app_display_name": "飞书", "title": "紧急通知", "body": "生产环境数据库故障，所有服务暂停，技术团队正在抢修"}, "classification": {"folder": "Work", "priority": 5}}
+{"id": "004", "notification": {"app": "com.ss.android.ugc.aweme", "app_display_name": "抖音", "title": "新消息", "body": "有人评论了你的视频：哈哈哈太搞笑了"}, "classification": {"folder": "Personal", "priority": 3}}
+{"id": "005", "notification": {"app": "com.amazon.mShop.android.shopping", "app_display_name": "Amazon", "title": "Your order has shipped!", "body": "Good news! Your package will arrive tomorrow by 8pm. Track: TBA123456789"}, "classification": {"folder": "Alerts", "priority": 3}}
+{"id": "006", "notification": {"app": "com.target.ui", "app_display_name": "Target", "title": "🎯 50% OFF Everything!", "body": "Flash sale ends tonight! Use code SAVE50 at checkout. Shop now →"}, "classification": {"folder": "Promotions", "priority": 2}}
+{"id": "007", "notification": {"app": "com.xingin.xhs", "app_display_name": "小红书", "title": "种草提醒", "body": "你关注的博主分享了新的美妆教程"}, "classification": {"folder": "Personal", "priority": 3}}
+{"id": "008", "notification": {"app": "com.alibaba.android.rimet", "app_display_name": "钉钉", "title": "视频会议", "body": "10分钟后全员会议开始，请准时参加"}, "classification": {"folder": "Work", "priority": 4}}
+{"id": "009", "notification": {"app": "com.chase.sig.android", "app_display_name": "Chase Mobile", "title": "Security Alert", "body": "We detected a login from a new device in London, UK. Was this you?"}, "classification": {"folder": "Alerts", "priority": 5}}
 ```
 
 ## Your Output
 
-Generate **100 unique, realistic notification entries** in JSONL format. Ensure broad coverage of all folders, apps, languages, and priority levels. Focus on quality and realism over quantity.
+Generate **400 unique, realistic notification entries** in JSONL format.
+
+**CRITICAL REQUIREMENTS:**
+- At least 30-40% must be from Chinese apps (Feishu, DingTalk, WeChat, Douyin, RedNote)
+- Use real Android package names (e.g., com.slack, com.tencent.mm, com.ss.android.lark)
+- All Chinese content must be natural and conversational, not translated
+- Ensure broad coverage of all folders, apps, languages, and priority levels
+- Focus on quality and realism over quantity

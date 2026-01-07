@@ -1,0 +1,122 @@
+================================================================================
+                      DATASET QUICK REFERENCE CARD
+================================================================================
+
+OVERALL HEALTH: GOOD (Grade: B+)
+Status: Production Ready with Minor Adjustments Recommended
+
+================================================================================
+KEY METRICS AT A GLANCE
+================================================================================
+
+Total Entries:          12,600
+Batch Files:            32
+Unique Apps:            1,019
+Parsing Errors:         1 (0.008%)
+
+================================================================================
+FOLDER DISTRIBUTION
+================================================================================
+
+  Work:                 38.0%  [Target: 35%]           ✓ OK
+  Personal:             28.8%  [Target: 30-35%]        ⚠ Low (-1.2%)
+  Promotions:           18.4%  [Target: 15-20%]        ✓ OK
+  Alerts:               14.8%  [Target: 15%]           ✓ OK
+
+  Status: 3/4 on target, 1 slightly below
+
+================================================================================
+PRIORITY DISTRIBUTION
+================================================================================
+
+  P1:                   19.8%
+  P2:                   36.1%  ← Highest (as expected)
+  P3:                   25.8%
+  P4:                   12.2%
+  P5:                    6.2%  [Target: <15%]          ✓ OK
+
+  P2+P3 Combined:       61.8%  [Target: >50%]          ✓ EXCELLENT
+
+  Status: Optimal distribution achieved
+
+================================================================================
+LANGUAGE DIVERSITY
+================================================================================
+
+  Chinese (CJK):        23.7%  [Target: 30-40%]        ⚠ Low (-6.3%)
+  English/Other:        76.3%
+
+  Status: Needs more Chinese content
+
+================================================================================
+TOP 5 APPS
+================================================================================
+
+  1. Slack              15.4%  (1,946 entries)
+  2. WeChat             15.4%  (1,944 entries)
+  3. Telegram            4.9%  (621 entries)
+  4. WhatsApp            4.9%  (620 entries)
+  5. GitHub              4.4%  (554 entries)
+
+================================================================================
+TEXT STATISTICS
+================================================================================
+
+  Average Title Length:   12.7 characters  (Range: 1-46)
+  Average Body Length:    49.6 characters  (Range: 1-112)
+
+  Status: Realistic for mobile notifications ✓
+
+================================================================================
+ISSUES SUMMARY
+================================================================================
+
+Critical Issues:        0
+Minor Warnings:         2
+
+Warnings:
+  1. Personal folder 1.2% below target (need +146 entries)
+  2. Chinese content 6.3% below target (need +791 entries)
+
+Data Quality Issues:
+  1. JSON parsing error in batch_15.jsonl line 278 (misplaced classification)
+
+================================================================================
+RECOMMENDATIONS FOR NEXT BATCHES
+================================================================================
+
+Priority 1: Add more Chinese language content
+  - Target apps: WeChat, 钉钉, 飞书, 小红书, 抖音
+  - Mix Chinese in titles and bodies
+
+Priority 2: Increase Personal folder entries
+  - Focus on: messaging, calendar, social apps
+  - Target: +146 entries minimum
+
+Priority 3: Fix data error
+  - File: batch_15.jsonl, line 278
+  - Move classification to root level
+
+Maintain: Current priority distribution (P2+P3 dominance is perfect!)
+
+================================================================================
+STRENGTHS TO MAINTAIN
+================================================================================
+
+✓ Excellent priority balance (P2+P3 at 61.8%)
+✓ Great app diversity (1,019 unique apps)
+✓ Realistic notification lengths
+✓ P5 appropriately rare (6.2%)
+✓ Minimal parsing errors (only 1)
+
+================================================================================
+PRODUCTION READINESS: YES
+Dataset can be used for training with current quality level.
+Implement recommendations for improved balance in future batches.
+================================================================================
+
+Generated: 2026-01-07
+Location: E:\projects\notif\data\
+Analysis Scripts: analyze_stats.py, detailed_stats.py, visualize_distributions.py
+
+================================================================================
