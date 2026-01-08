@@ -69,3 +69,4 @@ functiongemma_baseline_results.json
 functiongemma_train.jsonl
 test_results.txt
 training_data.jsonl
+docs/contest_writeup/
