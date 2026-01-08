@@ -25,6 +25,11 @@
 | 文件夹准确率 | 94.0% |
 | 优先级准确率 | 83.0% |
 
+### 资源链接
+
+- 🤗 [模型下载 (HuggingFace)](https://huggingface.co/charlesfeng1/qwen3-0.6b-notifai)
+- 📊 [训练数据集 (HuggingFace)](https://huggingface.co/datasets/charlesfeng1/notifai-dataset)
+
 ### 快速开始
 
 ```bash
@@ -160,6 +165,11 @@ AI-powered notification organizer for Android using on-device Qwen3-0.6B LLM. Fu
 | Model Size | ~650 MB (Q8_0) |
 | Folder Accuracy | 94.0% |
 | Priority Accuracy | 83.0% |
+
+### Resources
+
+- 🤗 [Model Download (HuggingFace)](https://huggingface.co/charlesfeng1/qwen3-0.6b-notifai)
+- 📊 [Training Dataset (HuggingFace)](https://huggingface.co/datasets/charlesfeng1/notifai-dataset)
 
 ### Quick Start
 

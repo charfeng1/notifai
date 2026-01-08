@@ -1,16 +1,20 @@
-# Models (too large for git)
+# ========== External Repositories ==========
+llama.cpp/
+llama.rn/
+pocketpal-ai/
+
+# ========== Model Weights (use HuggingFace) ==========
 *.gguf
 *.safetensors
-models/*.bin
+*.bin
 models/
 
-# Training outputs and data files
-functiongemma-finetuned-notif*/
-functiongemma_train*.jsonl
-functiongemma_test*.jsonl
-training_data_full*.jsonl
+# ========== Finetuned Model Outputs ==========
+functiongemma-finetuned-notif/
+functiongemma-finetuned-notif-3level/
+qwen3-finetuned-*/
 
-# Android
+# ========== Android Build ==========
 android/build/
 android/app/build/
 android/.gradle/
@@ -23,50 +27,37 @@ android/.externalNativeBuild/
 android/.cxx/
 android/app/.cxx/
 
-# Python
+# ========== Python ==========
 __pycache__/
 *.py[cod]
 *$py.class
 .venv/
 venv/
 .env
-
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Temporary files
-*.log
-*.tmp
-dataset_analysis_report.txt
-BATCH_09_SUMMARY.txt
-GENERATION_COMPLETE.txt
-nul
-
-# Cloned reference repositories (not part of our project)
-llama.rn/
-pocketpal-ai/
-llama.cpp/
-
-# Model directories and training outputs
-functiongemma-finetuned-notif/
-
-# Python project files
 pyproject.toml
 uv.lock
 .python-version
 main.py
 
-# Test results and baselines
-baseline_test_results.json
-functiongemma_baseline_results.json
-functiongemma_train.jsonl
-test_results.txt
-training_data.jsonl
+# ========== IDEs ==========
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ========== OS ==========
+.DS_Store
+Thumbs.db
+nul
+
+# ========== Temporary/Generated ==========
+*.log
+*.tmp
+
+# ========== Internal Docs (not for public) ==========
 docs/contest_writeup/
+docs/internal/
+
+# ========== Test Results ==========
+*_results.json
+test_results.txt
