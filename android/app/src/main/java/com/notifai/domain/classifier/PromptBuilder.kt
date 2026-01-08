@@ -12,10 +12,6 @@ class PromptBuilder @Inject constructor(
     private val settingsRepository: SettingsRepository
 ) {
 
-    // Cache the system prompt to detect changes
-    @Volatile
-    private var cachedSystemPrompt: String? = null
-
     /**
      * Builds the system prompt portion (cacheable in KV cache).
      * This only changes when folders or personal instructions change.
@@ -64,18 +60,7 @@ Body: $body<|im_end|>
     }
 
     /**
-     * Checks if system prompt has changed since last cache.
-     * Returns true if prompt changed (cache needs refresh).
-     */
-    suspend fun hasSystemPromptChanged(): Boolean {
-        val newPrompt = buildSystemPrompt()
-        val changed = cachedSystemPrompt != newPrompt
-        cachedSystemPrompt = newPrompt
-        return changed
-    }
-
-    /**
-     * Legacy method - builds full prompt for compatibility.
+     * Builds full prompt (system + user) for fallback when cache unavailable.
      */
     suspend fun buildPrompt(
         appName: String,
