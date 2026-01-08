@@ -1,18 +1,22 @@
 package com.notifai.service
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.notifai.R
 import com.notifai.data.local.dao.NotificationDao
 import com.notifai.data.local.entity.NotificationEntity
 import com.notifai.ui.MainActivity
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -28,13 +32,27 @@ class NotificationDispatcher @Inject constructor(
         const val CHANNEL_HIGH_PRIORITY = "high_priority"
         const val CHANNEL_BATCH = "batch_notifications"
 
-        // Notification IDs
+        // Notification IDs - use AtomicInteger for thread safety
         private const val BATCH_NOTIFICATION_ID = 1000
-        private var highPriorityNotificationId = 2000
+        private val highPriorityNotificationId = AtomicInteger(2000)
     }
 
     init {
         createNotificationChannels()
+    }
+
+    /**
+     * Check if we have permission to post notifications (required on Android 13+)
+     */
+    private fun hasNotificationPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true // Permission not required pre-Android 13
+        }
     }
 
     private fun createNotificationChannels() {
@@ -93,6 +111,11 @@ class NotificationDispatcher @Inject constructor(
     }
 
     private fun sendHighPriorityNotification(notification: NotificationEntity) {
+        if (!hasNotificationPermission()) {
+            Log.w(TAG, "No notification permission, skipping high priority notification")
+            return
+        }
+
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         // Intent to open the app
@@ -120,13 +143,18 @@ class NotificationDispatcher @Inject constructor(
             .setContentIntent(pendingIntent)
             .setGroup("high_priority_group")
 
-        notificationManager.notify(highPriorityNotificationId++, builder.build())
+        notificationManager.notify(highPriorityNotificationId.getAndIncrement(), builder.build())
     }
 
     /**
      * Send batched notification for all pending medium priority items
      */
     suspend fun sendBatchNotification() {
+        if (!hasNotificationPermission()) {
+            Log.w(TAG, "No notification permission, skipping batch notification")
+            return
+        }
+
         val pending = notificationDao.getPendingMediumPriority()
 
         if (pending.isEmpty()) {
