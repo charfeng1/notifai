@@ -47,11 +47,11 @@ git clone https://github.com/ggerganov/llama.cpp.git
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     Android App                              │
+│                     Android App                             │
 ├─────────────────────────────────────────────────────────────┤
 │  Jetpack Compose UI  │  MVVM  │  Hilt DI  │  Room DB        │
 ├─────────────────────────────────────────────────────────────┤
-│  NotificationListener  →  ClassificationService              │
+│  NotificationListener  →  ClassificationService             │
 ├─────────────────────────────────────────────────────────────┤
 │  LlamaClassifier (Kotlin)  →  JNI  →  llama.cpp (C++)       │
 ├─────────────────────────────────────────────────────────────┤
@@ -183,11 +183,11 @@ git clone https://github.com/ggerganov/llama.cpp.git
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     Android App                              │
+│                     Android App                             │
 ├─────────────────────────────────────────────────────────────┤
 │  Jetpack Compose UI  │  MVVM  │  Hilt DI  │  Room DB        │
 ├─────────────────────────────────────────────────────────────┤
-│  NotificationListener  →  ClassificationService              │
+│  NotificationListener  →  ClassificationService             │
 ├─────────────────────────────────────────────────────────────┤
 │  LlamaClassifier (Kotlin)  →  JNI  →  llama.cpp (C++)       │
 ├─────────────────────────────────────────────────────────────┤
