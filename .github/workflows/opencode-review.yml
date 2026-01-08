@@ -1,0 +1,86 @@
+name: OpenCode Review
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+
+jobs:
+  opencode-review:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run OpenCode Review (Attempt 1)
+        id: review1
+        continue-on-error: true
+        uses: anomalyco/opencode/github@latest
+        env:
+          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+        with:
+          model: zai-coding-plan/glm-4.7
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Please review this pull request and provide feedback on:
+            - Code quality and best practices
+            - Potential bugs or issues
+            - Performance considerations
+            - Security concerns
+
+            Do NOT make any code changes or commits. Only provide review feedback as comments.
+
+      - name: Wait before retry
+        if: steps.review1.outcome == 'failure'
+        run: sleep 30
+
+      - name: Run OpenCode Review (Attempt 2)
+        id: review2
+        if: steps.review1.outcome == 'failure'
+        continue-on-error: true
+        uses: anomalyco/opencode/github@latest
+        env:
+          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+        with:
+          model: zai-coding-plan/glm-4.7
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Please review this pull request and provide feedback on:
+            - Code quality and best practices
+            - Potential bugs or issues
+            - Performance considerations
+            - Security concerns
+
+            Do NOT make any code changes or commits. Only provide review feedback as comments.
+
+      - name: Wait before final retry
+        if: steps.review1.outcome == 'failure' && steps.review2.outcome == 'failure'
+        run: sleep 30
+
+      - name: Run OpenCode Review (Attempt 3)
+        if: steps.review1.outcome == 'failure' && steps.review2.outcome == 'failure'
+        uses: anomalyco/opencode/github@latest
+        env:
+          ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
+        with:
+          model: zai-coding-plan/glm-4.7
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Please review this pull request and provide feedback on:
+            - Code quality and best practices
+            - Potential bugs or issues
+            - Performance considerations
+            - Security concerns
+
+            Do NOT make any code changes or commits. Only provide review feedback as comments.

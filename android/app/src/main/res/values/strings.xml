@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Notifai</string>
+
+    <!-- Home Screen -->
+    <string name="home_title">Notifai</string>
+    <string name="folder_work">Work</string>
+    <string name="folder_personal">Personal</string>
+    <string name="folder_promotions">Promotions</string>
+    <string name="folder_alerts">Alerts</string>
+    <string name="recent_notifications">Recent</string>
+
+    <!-- Settings -->
+    <string name="settings">Settings</string>
+    <string name="monitored_apps">Monitored Apps</string>
+    <string name="custom_folders">Custom Folders</string>
+    <string name="personal_instructions">Personal Instructions</string>
+
+    <!-- Permissions -->
+    <string name="notification_access_required">Notification Access Required</string>
+    <string name="grant_notification_access">Grant Access</string>
+
+    <!-- Onboarding -->
+    <string name="welcome_title">Welcome to Notifai</string>
+    <string name="welcome_description">AI-powered notification organizer that classifies your notifications into smart folders</string>
+
+    <!-- Service -->
+    <string name="classification_service_title">Notifai Active</string>
+    <string name="classification_service_description">Organizing your notifications</string>
+</resources>
