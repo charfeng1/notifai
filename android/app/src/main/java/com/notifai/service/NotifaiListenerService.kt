@@ -58,6 +58,20 @@ class NotifaiListenerService : NotificationListenerService() {
                     return@launch
                 }
 
+                // Skip foreground service / system notifications
+                val isOngoing = (notification.flags and Notification.FLAG_ONGOING_EVENT) != 0
+                val isForegroundService = (notification.flags and Notification.FLAG_FOREGROUND_SERVICE) != 0
+                val isSystemCategory = notification.category in listOf(
+                    Notification.CATEGORY_SERVICE,
+                    Notification.CATEGORY_SYSTEM,
+                    Notification.CATEGORY_PROGRESS
+                )
+
+                if (isOngoing || isForegroundService || isSystemCategory) {
+                    Log.d(TAG, "Skipping system/service notification from $packageName (ongoing=$isOngoing, fg=$isForegroundService, category=${notification.category})")
+                    return@launch
+                }
+
                 // Get app name
                 val pm = packageManager
                 val appInfo = pm.getApplicationInfo(packageName, 0)

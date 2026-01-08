@@ -43,4 +43,12 @@ interface NotificationDao {
     // Mark single notification as notified
     @Query("UPDATE notifications SET notified = 1 WHERE id = :id")
     suspend fun markAsNotified(id: String)
+
+    // Delete all notifications in a specific folder
+    @Query("DELETE FROM notifications WHERE folder = :folderName")
+    suspend fun deleteByFolder(folderName: String)
+
+    // Update folder name for all notifications when folder is renamed
+    @Query("UPDATE notifications SET folder = :newName WHERE folder = :oldName")
+    suspend fun updateFolderName(oldName: String, newName: String)
 }
