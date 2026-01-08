@@ -21,7 +21,7 @@
 |------|------|
 | 分类延迟 | 1.3 秒 |
 | Decode 速度 | 22.79 tok/s |
-| 模型大小 | 475 MB |
+| 模型大小 | ~650 MB (Q8_0) |
 | 文件夹准确率 | 94.0% |
 | 优先级准确率 | 83.0% |
 
@@ -86,6 +86,47 @@ notifai/
 | 007 | 涌现分类能力测试 | ✅ |
 | 008 | KV Cache 缓存优化 (50%) | ✅ |
 
+### 使用示例
+
+应用安装后，授予通知访问权限，即可自动分类通知：
+
+**默认文件夹：**
+- **Job** - 工作相关（Slack、Jira、飞书、钉钉）
+- **Private** - 个人消息（微信、WhatsApp、短信）
+- **Deals** - 促销信息（购物优惠、广告）
+- **Notices** - 系统提醒（银行、快递、安全警报）
+
+**智能通知分发：**
+- **High** - 立即推送 + 震动提醒
+- **Medium** - 队列聚合，每 30 分钟批量推送
+- **Low** - 静默处理，仅存储不打扰
+
+**自定义文件夹：** 点击 "+" 添加自定义文件夹，输入名称和描述，AI 自动学习分类。
+
+### 分类输出格式
+
+模型输出 JSON 格式：
+```json
+{"folder": "Job", "priority": "high"}
+```
+
+### 系统要求
+
+- Android 8.0+ (API 26+)
+- ARM64 处理器
+- 2GB+ 可用存储空间
+- 2GB+ RAM
+
+### 贡献指南
+
+欢迎贡献！请遵循以下步骤：
+
+1. Fork 本仓库
+2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
+3. 提交更改 (`git commit -m 'Add amazing feature'`)
+4. 推送到分支 (`git push origin feature/amazing-feature`)
+5. 创建 Pull Request
+
 ### 开源协议
 
 Apache 2.0 License
@@ -115,7 +156,7 @@ AI-powered notification organizer for Android using on-device Qwen3-0.6B LLM. Fu
 |--------|-------|
 | Classification Latency | 1.3 seconds |
 | Decode Speed | 22.79 tok/s |
-| Model Size | 475 MB |
+| Model Size | ~650 MB (Q8_0) |
 | Folder Accuracy | 94.0% |
 | Priority Accuracy | 83.0% |
 
@@ -179,6 +220,47 @@ notifai/
 | 006 | Qwen3-0.6B Fine-tuning | ✅ |
 | 007 | Emergent Classification Test | ✅ |
 | 008 | KV Cache Optimization (50%) | ✅ |
+
+### Usage
+
+After installation, grant notification access permission and the app will automatically classify notifications:
+
+**Default Folders:**
+- **Job** - Work-related (Slack, Jira, Feishu, DingTalk)
+- **Private** - Personal messages (WeChat, WhatsApp, SMS)
+- **Deals** - Promotions (shopping deals, ads)
+- **Notices** - System alerts (banking, delivery, security)
+
+**Smart Notification Dispatch:**
+- **High** - Immediate push + vibration alert
+- **Medium** - Queued, batched every 30 minutes
+- **Low** - Silent handling, stored only (no interruption)
+
+**Custom Folders:** Tap "+" to add custom folders with name and description. AI learns to classify automatically.
+
+### Classification Output Format
+
+Model outputs JSON:
+```json
+{"folder": "Job", "priority": "high"}
+```
+
+### System Requirements
+
+- Android 8.0+ (API 26+)
+- ARM64 processor
+- 2GB+ available storage
+- 2GB+ RAM
+
+### Contributing
+
+Contributions welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Create a Pull Request
 
 ### License
 
