@@ -31,4 +31,16 @@ interface NotificationDao {
 
     @Query("DELETE FROM notifications")
     suspend fun deleteAll()
+
+    // Get pending medium priority notifications that haven't been notified yet
+    @Query("SELECT * FROM notifications WHERE priority = 2 AND notified = 0 ORDER BY timestamp ASC")
+    suspend fun getPendingMediumPriority(): List<NotificationEntity>
+
+    // Mark notifications as notified
+    @Query("UPDATE notifications SET notified = 1 WHERE id IN (:ids)")
+    suspend fun markAsNotified(ids: List<String>)
+
+    // Mark single notification as notified
+    @Query("UPDATE notifications SET notified = 1 WHERE id = :id")
+    suspend fun markAsNotified(id: String)
 }
