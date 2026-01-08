@@ -20,8 +20,9 @@ class PromptBuilder @Inject constructor(
         val folders = folderRepository.allFolders.first()
         val personalInstructions = settingsRepository.getPersonalInstructions() ?: ""
 
+        // Match training format: "- FolderName: description"
         val folderDescriptions = folders.joinToString("\n") { folder ->
-            "[${folder.name}]: ${folder.description}"
+            "- ${folder.name}: ${folder.description}"
         }
 
         val userSection = if (personalInstructions.isNotEmpty()) {
@@ -30,13 +31,17 @@ class PromptBuilder @Inject constructor(
 
         return """
 <|im_start|>system
-You classify notifications into folders.
+You are a notification classifier. Classify the notification into a folder and priority level.
 
 Folders:
 $folderDescriptions$userSection
 
-Output JSON only: {"folder": "...", "priority": 1-3}
-Priority: 1=low, 2=medium, 3=high
+Priority levels:
+- 1 (Low): Can ignore or check later (promotions, social media, newsletters)
+- 2 (Medium): Worth checking today (regular emails, app updates, deliveries)
+- 3 (High): Requires immediate attention (urgent messages, security alerts, time-sensitive)
+
+Respond with ONLY a JSON object: {"folder": "<folder>", "priority": <1-3>}
 /no_think<|im_end|>
 <|im_start|>user
 App: $appName

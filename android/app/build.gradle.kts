@@ -112,6 +112,11 @@ dependencies {
     ksp("com.google.dagger:hilt-compiler:$hiltVersion")
     implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
 
+    // WorkManager for batch notifications
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.hilt:hilt-work:1.1.0")
+    ksp("androidx.hilt:hilt-compiler:1.1.0")
+
     // JSON Parsing
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
 

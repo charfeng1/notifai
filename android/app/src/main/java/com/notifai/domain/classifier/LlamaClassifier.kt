@@ -18,7 +18,7 @@ class LlamaClassifier @Inject constructor(
 
     companion object {
         private const val TAG = "LlamaClassifier"
-        private const val MODEL_FILENAME = "Qwen3-0.6B-Q5_K_M.gguf"
+        private const val MODEL_FILENAME = "Qwen3-0.6B-notif-Q8_0.gguf"
 
         init {
             // Load optimal library based on CPU features (dotprod, i8mm, etc.)
@@ -79,7 +79,9 @@ class LlamaClassifier @Inject constructor(
         }
     }
 
-    suspend fun classify(prompt: String): String = withContext(Dispatchers.Default) {
+    data class ClassificationResult(val response: String, val inferenceTimeMs: Long)
+
+    suspend fun classify(prompt: String): ClassificationResult = withContext(Dispatchers.Default) {
         // Auto-initialize on first use (lazy initialization)
         if (!isInitialized) {
             Log.i(TAG, "Auto-initializing model on first classification...")
@@ -94,7 +96,7 @@ class LlamaClassifier @Inject constructor(
 
             if (!isInitialized) {
                 Log.e(TAG, "Failed to auto-initialize classifier")
-                return@withContext ""
+                return@withContext ClassificationResult("", 0)
             }
         }
 
@@ -109,10 +111,10 @@ class LlamaClassifier @Inject constructor(
                 Log.i(TAG, "Classification took ${duration}ms")
                 Log.d(TAG, "Result: $result")
 
-                result
+                ClassificationResult(result, duration)
             } catch (e: Exception) {
                 Log.e(TAG, "Inference failed", e)
-                ""
+                ClassificationResult("", 0)
             }
         }
     }
