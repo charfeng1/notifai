@@ -91,16 +91,14 @@ Java_com_notifai_domain_classifier_LlamaClassifier_nativeInference(
     }
 
     const char* prompt_text = env->GetStringUTFChars(prompt, nullptr);
-    LOGI("Running inference, prompt: %s", prompt_text);
+    LOGI("Running inference...");
 
-    // Format using Qwen3 chat template with /no_think to disable thinking mode
-    // Qwen3 format: <|im_start|>system\n/no_think\nYou are Qwen.<|im_end|>\n<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n
-    std::string formatted_prompt = "<|im_start|>system\n/no_think\nYou are Qwen.<|im_end|>\n<|im_start|>user\n";
-    formatted_prompt += prompt_text;
-    formatted_prompt += "<|im_end|>\n<|im_start|>assistant\n";
-
+    // Prompt is already formatted by PromptBuilder with Qwen chat template
+    std::string formatted_prompt = prompt_text;
     env->ReleaseStringUTFChars(prompt, prompt_text);
-    LOGI("Formatted prompt: %s", formatted_prompt.c_str());
+
+    // Clear memory (KV cache) from previous inference
+    llama_memory_clear(llama_get_memory(g_ctx), true);
 
     // Tokenize the formatted prompt
     std::vector<llama_token> tokens_list;
@@ -132,9 +130,10 @@ Java_com_notifai_domain_classifier_LlamaClassifier_nativeInference(
     TimePoint t_start_total = Clock::now();
     TimePoint t_start_prefill = Clock::now();
 
-    // Process prompt tokens (prefill phase)
-    for (int i = 0; i < n_tokens; i += 512) {
-        int batch_size = std::min(512, n_tokens - i);
+    // Process prompt tokens (prefill phase) - use n_batch from context
+    const int n_batch = 128;  // Must match ctx_params.n_batch
+    for (int i = 0; i < n_tokens; i += n_batch) {
+        int batch_size = std::min(n_batch, n_tokens - i);
         llama_batch batch = llama_batch_get_one(tokens_list.data() + i, batch_size);
 
         if (llama_decode(g_ctx, batch) != 0) {
@@ -150,9 +149,9 @@ Java_com_notifai_domain_classifier_LlamaClassifier_nativeInference(
 
     LOGI("Prompt decoded, starting generation");
 
-    // Generate response (max 20 tokens for testing)
+    // Generate response (max 50 tokens for JSON output)
     std::string response;
-    int max_tokens = 20;  // Reduced for faster testing
+    int max_tokens = 50;
     int tokens_generated = 0;
     TimePoint t_first_token;
     TimePoint t_start_decode = Clock::now();

@@ -1,7 +1,13 @@
 # Models (too large for git)
 *.gguf
 *.safetensors
-models/*.bin
+models/
+
+# Training outputs and data files
+functiongemma-finetuned-notif*/
+functiongemma_train*.jsonl
+functiongemma_test*.jsonl
+training_data_full*.jsonl
 
 # Android
 android/build/

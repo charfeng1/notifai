@@ -69,7 +69,10 @@ fun FolderDetailScreen(
                 }
 
                 items(notifications) { notification ->
-                    NotificationCard(notification = notification)
+                    NotificationCard(
+                        notification = notification,
+                        onClick = { viewModel.openNotification(notification) }
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
             }

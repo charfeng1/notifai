@@ -97,7 +97,10 @@ fun HomeScreen(
 
             // Recent notifications
             items(recentNotifications.take(10)) { notification ->
-                NotificationCard(notification = notification)
+                NotificationCard(
+                    notification = notification,
+                    onClick = { viewModel.openNotification(notification) }
+                )
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
@@ -183,9 +186,14 @@ fun FolderCard(
 }
 
 @Composable
-fun NotificationCard(notification: NotificationEntity) {
+fun NotificationCard(
+    notification: NotificationEntity,
+    onClick: () -> Unit = {}
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = if (notification.isRead)
                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -232,17 +240,36 @@ fun NotificationCard(notification: NotificationEntity) {
                 )
             }
             Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "→ ${notification.folder}",
-                style = MaterialTheme.typography.labelSmall,
-                color = when (notification.folder) {
-                    "Work" -> WorkColor
-                    "Personal" -> PersonalColor
-                    "Promotions" -> PromotionsColor
-                    "Alerts" -> AlertsColor
-                    else -> MaterialTheme.colorScheme.secondary
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "→ ${notification.folder}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = when (notification.folder) {
+                        "Work" -> WorkColor
+                        "Personal" -> PersonalColor
+                        "Promotions" -> PromotionsColor
+                        "Alerts" -> AlertsColor
+                        else -> MaterialTheme.colorScheme.secondary
+                    }
+                )
+                // Priority indicator
+                val priorityText = when (notification.priority) {
+                    3 -> "🔴 High"
+                    2 -> "🟡 Medium"
+                    1 -> "🟢 Low"
+                    else -> ""
                 }
-            )
+                if (priorityText.isNotEmpty()) {
+                    Text(
+                        text = priorityText,
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            }
         }
     }
 }
