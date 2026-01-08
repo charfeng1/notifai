@@ -35,8 +35,9 @@ You classify notifications into folders.
 Folders:
 $folderDescriptions$userSection
 
-Output JSON only: {"folder": "...", "priority": 1-5}
-Priority: 1=ignore, 2=low, 3=normal, 4=important, 5=urgent<|im_end|>
+Output JSON only: {"folder": "...", "priority": 1-3}
+Priority: 1=low, 2=medium, 3=high
+/no_think<|im_end|>
 <|im_start|>user
 App: $appName
 Title: $title

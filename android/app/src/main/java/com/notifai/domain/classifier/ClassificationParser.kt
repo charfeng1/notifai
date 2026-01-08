@@ -23,20 +23,27 @@ class ClassificationParser @Inject constructor() {
 
     fun parse(response: String): ClassificationResult? {
         return try {
+            // Strip <think>...</think> tags (Qwen3 thinking mode output)
+            val cleanedResponse = response
+                .replace(Regex("<think>.*?</think>", RegexOption.DOT_MATCHES_ALL), "")
+                .trim()
+
+            Log.d(TAG, "Cleaned response: $cleanedResponse")
+
             // Extract JSON from response
-            val jsonStart = response.indexOf("{")
-            val jsonEnd = response.lastIndexOf("}") + 1
+            val jsonStart = cleanedResponse.indexOf("{")
+            val jsonEnd = cleanedResponse.lastIndexOf("}") + 1
 
             if (jsonStart >= 0 && jsonEnd > jsonStart) {
-                val jsonStr = response.substring(jsonStart, jsonEnd)
+                val jsonStr = cleanedResponse.substring(jsonStart, jsonEnd)
                 Log.d(TAG, "Extracted JSON: $jsonStr")
 
                 val result = json.decodeFromString<ClassificationResult>(jsonStr)
 
-                // Validate result
-                if (result.priority !in 1..5) {
-                    Log.w(TAG, "Invalid priority: ${result.priority}, defaulting to 3")
-                    return result.copy(priority = 3)
+                // Validate result (3-tier: 1=low, 2=medium, 3=high)
+                if (result.priority !in 1..3) {
+                    Log.w(TAG, "Invalid priority: ${result.priority}, defaulting to 2")
+                    return result.copy(priority = 2)
                 }
 
                 result

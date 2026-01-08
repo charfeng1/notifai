@@ -46,6 +46,7 @@ class ClassificationService : Service() {
         startForeground(NOTIFICATION_ID, createNotification())
 
         intent?.let {
+            val notificationId = it.getStringExtra("notificationId") ?: return@let
             val packageName = it.getStringExtra("packageName") ?: return@let
             val appName = it.getStringExtra("appName") ?: ""
             val title = it.getStringExtra("title") ?: ""
@@ -58,7 +59,7 @@ class ClassificationService : Service() {
 
                     // Classify notification (model initialized in Application class)
                     val result = classifyNotificationUseCase(
-                        packageName, appName, title, body, timestamp
+                        notificationId, packageName, appName, title, body, timestamp
                     )
 
                     if (result.isFailure) {

@@ -20,6 +20,9 @@ class NotifaiListenerService : NotificationListenerService() {
     @Inject
     lateinit var monitoredAppRepository: MonitoredAppRepository
 
+    @Inject
+    lateinit var notificationIntentCache: NotificationIntentCache
+
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     companion object {
@@ -62,8 +65,16 @@ class NotifaiListenerService : NotificationListenerService() {
 
                 Log.i(TAG, "Received notification from $appName: $title")
 
+                // Generate unique ID for this notification
+                val notificationId = java.util.UUID.randomUUID().toString()
+
+                // Cache the content intent for later deep-linking
+                val contentIntent = notification.contentIntent
+                notificationIntentCache.put(notificationId, contentIntent, packageName)
+
                 // Start classification service
                 val intent = Intent(this@NotifaiListenerService, ClassificationService::class.java).apply {
+                    putExtra("notificationId", notificationId)
                     putExtra("packageName", packageName)
                     putExtra("appName", appName)
                     putExtra("title", title)

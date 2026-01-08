@@ -6,7 +6,6 @@ import com.notifai.data.repository.NotificationRepository
 import com.notifai.domain.classifier.ClassificationParser
 import com.notifai.domain.classifier.LlamaClassifier
 import com.notifai.domain.classifier.PromptBuilder
-import java.util.UUID
 import javax.inject.Inject
 
 class ClassifyNotificationUseCase @Inject constructor(
@@ -19,10 +18,11 @@ class ClassifyNotificationUseCase @Inject constructor(
     companion object {
         private const val TAG = "ClassifyNotificationUseCase"
         private const val DEFAULT_FOLDER = "Personal"
-        private const val DEFAULT_PRIORITY = 3
+        private const val DEFAULT_PRIORITY = 2 // 3-tier: 1=low, 2=medium, 3=high
     }
 
     suspend operator fun invoke(
+        notificationId: String,
         packageName: String,
         appName: String,
         title: String,
@@ -41,7 +41,7 @@ class ClassifyNotificationUseCase @Inject constructor(
                 Log.w(TAG, "Empty response from classifier, using defaults")
                 // Save with defaults if classification fails
                 val notification = NotificationEntity(
-                    id = UUID.randomUUID().toString(),
+                    id = notificationId,
                     packageName = packageName,
                     appName = appName,
                     title = title,
@@ -65,9 +65,9 @@ class ClassifyNotificationUseCase @Inject constructor(
                 Pair(DEFAULT_FOLDER, DEFAULT_PRIORITY)
             }
 
-            // Store in database
+            // Store in database - use the same ID as the intent cache
             val notification = NotificationEntity(
-                id = UUID.randomUUID().toString(),
+                id = notificationId,
                 packageName = packageName,
                 appName = appName,
                 title = title,
