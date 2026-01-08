@@ -33,10 +33,17 @@ class LlamaClassifier @Inject constructor(
     private val inferenceMutex = Mutex() // Ensures only one inference at a time
     private val initMutex = Mutex() // Ensures only one initialization at a time
 
+    // Cached system prompt hash to detect changes
+    @Volatile
+    private var cachedSystemPromptHash: Int = 0
+
     // Native methods
     private external fun nativeInit(modelPath: String): Boolean
     private external fun nativeInference(prompt: String): String
     private external fun nativeCleanup()
+    private external fun nativeCacheSystemPrompt(systemPrompt: String): Int
+    private external fun nativeInvalidateCache()
+    private external fun nativeIsCacheValid(): Boolean
 
     suspend fun initialize(): Boolean = withContext(Dispatchers.IO) {
         // Already initialized - return immediately
@@ -77,6 +84,45 @@ class LlamaClassifier @Inject constructor(
             Log.e(TAG, "Failed to initialize model", e)
             false
         }
+    }
+
+    /**
+     * Cache the system prompt in KV cache for faster subsequent inferences.
+     * Should be called once after initialization or when system prompt changes.
+     * @return Number of tokens cached, or -1 on failure
+     */
+    suspend fun cacheSystemPrompt(systemPrompt: String): Int = withContext(Dispatchers.IO) {
+        if (!isInitialized) {
+            Log.e(TAG, "Cannot cache system prompt - model not initialized")
+            return@withContext -1
+        }
+
+        val promptHash = systemPrompt.hashCode()
+        if (promptHash == cachedSystemPromptHash && nativeIsCacheValid()) {
+            Log.d(TAG, "System prompt unchanged and cache valid, skipping")
+            return@withContext 0
+        }
+
+        inferenceMutex.withLock {
+            Log.i(TAG, "Caching system prompt (${systemPrompt.length} chars)...")
+            val tokens = nativeCacheSystemPrompt(systemPrompt)
+            if (tokens > 0) {
+                cachedSystemPromptHash = promptHash
+                Log.i(TAG, "System prompt cached: $tokens tokens")
+            } else {
+                Log.e(TAG, "Failed to cache system prompt")
+            }
+            tokens
+        }
+    }
+
+    /**
+     * Invalidate the cached system prompt (e.g., when folders change).
+     */
+    fun invalidateCache() {
+        cachedSystemPromptHash = 0
+        nativeInvalidateCache()
+        Log.i(TAG, "System prompt cache invalidated")
     }
 
     data class ClassificationResult(val response: String, val inferenceTimeMs: Long)

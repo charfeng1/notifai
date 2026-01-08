@@ -32,11 +32,23 @@ class ClassifyNotificationUseCase @Inject constructor(
         timestamp: Long
     ): Result<Unit> {
         return try {
-            // Build prompt
-            val prompt = promptBuilder.buildPrompt(appName, title, body)
+            // Try to cache system prompt (only re-caches if changed)
+            val systemPrompt = promptBuilder.buildSystemPrompt()
+            val cacheResult = llamaClassifier.cacheSystemPrompt(systemPrompt)
+
             Log.d(TAG, "Classifying notification from $appName: $title")
 
-            // Run AI inference (will auto-initialize on first use)
+            // If caching succeeded, only send user message; otherwise send full prompt
+            val prompt = if (cacheResult >= 0) {
+                // Cache ready - send only user message
+                promptBuilder.buildUserMessage(appName, title, body)
+            } else {
+                // Cache failed (model not ready) - send full prompt as fallback
+                Log.w(TAG, "System prompt cache failed, using full prompt")
+                promptBuilder.buildPrompt(appName, title, body)
+            }
+
+            // Run AI inference
             val result = llamaClassifier.classify(prompt)
             val response = result.response
             val processingTimeMs = result.inferenceTimeMs
