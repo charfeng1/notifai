@@ -12,11 +12,15 @@ class PromptBuilder @Inject constructor(
     private val settingsRepository: SettingsRepository
 ) {
 
-    suspend fun buildPrompt(
-        appName: String,
-        title: String,
-        body: String
-    ): String {
+    // Cache the system prompt to detect changes
+    @Volatile
+    private var cachedSystemPrompt: String? = null
+
+    /**
+     * Builds the system prompt portion (cacheable in KV cache).
+     * This only changes when folders or personal instructions change.
+     */
+    suspend fun buildSystemPrompt(): String {
         val folders = folderRepository.allFolders.first()
         val personalInstructions = settingsRepository.getPersonalInstructions() ?: ""
 
@@ -43,11 +47,41 @@ Priority levels:
 
 Respond with ONLY a JSON object: {"folder": "<folder>", "priority": <1-3>}
 /no_think<|im_end|>
+""".trimIndent()
+    }
+
+    /**
+     * Builds the user message portion (changes for each notification).
+     */
+    fun buildUserMessage(appName: String, title: String, body: String): String {
+        return """
 <|im_start|>user
 App: $appName
 Title: $title
 Body: $body<|im_end|>
 <|im_start|>assistant
 """.trimIndent()
+    }
+
+    /**
+     * Checks if system prompt has changed since last cache.
+     * Returns true if prompt changed (cache needs refresh).
+     */
+    suspend fun hasSystemPromptChanged(): Boolean {
+        val newPrompt = buildSystemPrompt()
+        val changed = cachedSystemPrompt != newPrompt
+        cachedSystemPrompt = newPrompt
+        return changed
+    }
+
+    /**
+     * Legacy method - builds full prompt for compatibility.
+     */
+    suspend fun buildPrompt(
+        appName: String,
+        title: String,
+        body: String
+    ): String {
+        return buildSystemPrompt() + "\n" + buildUserMessage(appName, title, body)
     }
 }
