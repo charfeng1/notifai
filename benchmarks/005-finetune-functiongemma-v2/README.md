@@ -1,45 +1,45 @@
-# FunctionGemma-270M Fine-tuning v2 (3-Level Priority)
+# 基准测试 005: FunctionGemma-270M 微调 v2（3级优先级）
 
-**Date:** 2026-01-08
-**Model:** FunctionGemma-270M (google/functiongemma-270m-it)
-**Task:** Notification classification (folder + 3-level priority)
+**日期:** 2026-01-08
+**模型:** FunctionGemma-270M (google/functiongemma-270m-it)
+**任务:** 通知分类（文件夹 + 3级优先级）
 
-## Summary
+## 测试结果
 
-Fine-tuned FunctionGemma-270M on notification classification with simplified 3-level priority system (vs 5-level in v1).
+在简化的3级优先级系统（相比v1的5级）上对 FunctionGemma-270M 进行了微调。
 
-| Metric | Result |
-|--------|--------|
-| Folder Accuracy | **90.6%** |
-| Priority Accuracy | **54.6%** |
-| Both Correct | 49.0% |
-| Training Time | ~2 hours |
-| Test Samples | 500 |
+| 指标 | 结果 |
+|------|------|
+| 文件夹准确率 | **90.6%** |
+| 优先级准确率 | **54.6%** |
+| 综合准确率 | 49.0% |
+| 训练时间 | ~2 小时 |
+| 测试样本 | 500 |
 
-## Comparison to v1 (5-Level Priority)
+## 与 v1（5级优先级）对比
 
-| Metric | v1 (5-level) | v2 (3-level) | Change |
-|--------|-------------|--------------|--------|
-| Folder | 94.0% | 90.6% | -3.4% |
-| Priority | 38.0% | 54.6% | **+16.6%** |
+| 指标 | v1 (5级) | v2 (3级) | 变化 |
+|------|----------|----------|------|
+| 文件夹 | 94.0% | 90.6% | -3.4% |
+| 优先级 | 38.0% | 54.6% | **+16.6%** |
 
-Simplifying to 3 levels improved priority accuracy by 16.6 percentage points.
+简化为3级后，优先级准确率提升了16.6个百分点。
 
-## Training Configuration
+## 训练配置
 
 ```python
-# Dataset
+# 数据集
 train_examples = 12,000
 test_examples = 4,001
 total_examples = 16,001
 
-# LoRA Configuration
+# LoRA 配置
 r = 16
 lora_alpha = 16
 target_modules = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
-trainable_params = 3,796,992 (1.4% of 271M)
+trainable_params = 3,796,992 (占 271M 的 1.4%)
 
-# Training
+# 训练参数
 epochs = 3
 batch_size = 4
 gradient_accumulation = 4
@@ -50,70 +50,70 @@ dtype = bfloat16
 quantization = 4-bit NF4
 ```
 
-## Priority Breakdown
+## 优先级细分
 
-The 3-level priority system:
-- **1 (Low):** Can ignore or check later
-- **2 (Medium):** Worth checking today
-- **3 (High):** Requires immediate attention
+3级优先级系统：
+- **1 (低):** 可忽略或稍后查看
+- **2 (中):** 当天值得查看
+- **3 (高):** 需要立即关注
 
-| Priority | Accuracy | Samples |
-|----------|----------|---------|
-| 1 (Low) | **79.4%** | 204/257 |
-| 2 (Medium) | 22.9% | 32/140 |
-| 3 (High) | 35.9% | 37/103 |
+| 优先级 | 准确率 | 样本数 |
+|--------|--------|--------|
+| 1 (低) | **79.4%** | 204/257 |
+| 2 (中) | 22.9% | 32/140 |
+| 3 (高) | 35.9% | 37/103 |
 
-**Issue:** Model over-predicts Priority 1. Low priority is easy to identify, but distinguishing Medium vs High remains difficult.
+**问题:** 模型过度预测优先级1。低优先级容易识别，但区分中/高优先级仍然困难。
 
-## Folder Breakdown
+## 文件夹细分
 
-| Folder | Accuracy | Samples |
-|--------|----------|---------|
+| 文件夹 | 准确率 | 样本数 |
+|--------|--------|--------|
 | Work | **94.0%** | 189/201 |
 | Personal | **94.9%** | 129/136 |
 | Promotions | 89.8% | 79/88 |
 | Alerts | 74.7% | 56/75 |
 
-Folder classification remains strong, especially for Work and Personal.
+文件夹分类表现依然强劲，尤其是 Work 和 Personal。
 
-## Data Distribution
+## 数据分布
 
-**Training Set (12,000 examples):**
-- Priority 1: 5,380 (44.8%)
-- Priority 2: 3,333 (27.8%)
-- Priority 3: 3,287 (27.4%)
+**训练集（12,000 样本）:**
+- 优先级 1: 5,380 (44.8%)
+- 优先级 2: 3,333 (27.8%)
+- 优先级 3: 3,287 (27.4%)
 
-**Test Set (4,001 examples):**
-- Priority 1: 2,028 (50.7%)
-- Priority 2: 995 (24.9%)
-- Priority 3: 978 (24.4%)
+**测试集（4,001 样本）:**
+- 优先级 1: 2,028 (50.7%)
+- 优先级 2: 995 (24.9%)
+- 优先级 3: 978 (24.4%)
 
-## Model Output
+## 模型输出
 
-**Location:** `E:\projects\notif\functiongemma-finetuned-notif-3level`
+**位置:** `E:\projects\notif\functiongemma-finetuned-notif-3level`
 
-**Format:** FunctionGemma function-calling syntax
+**格式:** FunctionGemma 函数调用语法
 ```
 <start_function_call>call:classify_notification{app_name:<escape>Slack<escape>,title:<escape>Message<escape>,body:<escape>...<escape>,folder:<escape>Work<escape>,priority:<escape>3<escape>}<end_function_call>
 ```
 
-## Key Findings
+## 主要发现
 
-1. **Priority accuracy improved** from 38% to 54.6% with 3-level system
-2. **Low priority (1) works well** at 79.4% - model correctly identifies ignorable notifications
-3. **Medium/High distinction is hard** - the model struggles to differentiate urgency levels
-4. **Folder classification strong** - 90.6% overall, with Work/Personal near 95%
+1. **优先级准确率提升** 从38%提升到54.6%（3级系统）
+2. **低优先级(1)效果好** 达到79.4% - 模型能正确识别可忽略的通知
+3. **中/高区分困难** - 模型难以区分紧急程度
+4. **文件夹分类强** - 整体90.6%，Work/Personal接近95%
 
-## Next Steps
+## 下一步
 
-1. **Try Qwen3-0.6B** - Larger model (600M vs 270M) with simpler JSON output format
-2. **Class weighting** - Penalize over-prediction of Priority 1
-3. **Better training data** - Add clearer examples for Priority 2 vs 3 distinction
+1. **尝试 Qwen3-0.6B** - 更大的模型（600M vs 270M），更简单的 JSON 输出格式
+2. **类别权重** - 惩罚对优先级1的过度预测
+3. **改进训练数据** - 添加更清晰的优先级2 vs 3区分示例
 
-## Files
+## 相关文件
 
-- Training script: `E:\projects\notif\scripts\finetune_functiongemma_3level.py`
-- Evaluation script: `E:\projects\notif\scripts\evaluate_functiongemma_3level.py`
-- Training data: `E:\projects\notif\functiongemma_train_3level.jsonl`
-- Test data: `E:\projects\notif\functiongemma_test_3level.jsonl`
-- Results: `E:\projects\notif\functiongemma_3level_results.json`
+- 训练脚本: `E:\projects\notif\scripts\finetune_functiongemma_3level.py`
+- 评估脚本: `E:\projects\notif\scripts\evaluate_functiongemma_3level.py`
+- 训练数据: `E:\projects\notif\functiongemma_train_3level.jsonl`
+- 测试数据: `E:\projects\notif\functiongemma_test_3level.jsonl`
+- 结果文件: `E:\projects\notif\functiongemma_3level_results.json`
