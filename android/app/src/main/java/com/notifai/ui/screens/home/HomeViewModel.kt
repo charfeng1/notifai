@@ -16,6 +16,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.UUID
 import javax.inject.Inject
 
@@ -27,6 +30,8 @@ class HomeViewModel @Inject constructor(
     private val llamaClassifier: LlamaClassifier,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
+
+    private val folderMutex = Mutex()
 
     val folders: StateFlow<List<FolderEntity>> = folderRepository.allFolders
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -68,55 +73,62 @@ class HomeViewModel @Inject constructor(
     /**
      * Add a new custom folder.
      * Returns false if a folder with the same name already exists.
+     * Uses mutex to prevent race conditions with concurrent calls.
      */
     fun addFolder(name: String, description: String): Boolean {
-        val currentFolders = folders.value
-        // Check for duplicate name (case-insensitive)
-        if (currentFolders.any { it.name.equals(name, ignoreCase = true) }) {
-            return false
+        // Use runBlocking with mutex to ensure atomic check-and-insert
+        return runBlocking {
+            folderMutex.withLock {
+                val currentFolders = folderRepository.allFolders.first()
+                // Check for duplicate name (case-insensitive)
+                if (currentFolders.any { it.name.equals(name, ignoreCase = true) }) {
+                    return@runBlocking false
+                }
+
+                val nextSortOrder = (currentFolders.maxOfOrNull { it.sortOrder } ?: 3) + 1
+
+                val folder = FolderEntity(
+                    id = UUID.randomUUID().toString(),
+                    name = name,
+                    description = description,
+                    isDefault = false,
+                    sortOrder = nextSortOrder
+                )
+
+                folderRepository.insert(folder)
+                llamaClassifier.invalidateCache()
+                true
+            }
         }
-
-        viewModelScope.launch {
-            val nextSortOrder = (currentFolders.maxOfOrNull { it.sortOrder } ?: 3) + 1
-
-            val folder = FolderEntity(
-                id = UUID.randomUUID().toString(),
-                name = name,
-                description = description,
-                isDefault = false,
-                sortOrder = nextSortOrder
-            )
-
-            folderRepository.insert(folder)
-            llamaClassifier.invalidateCache()
-        }
-        return true
     }
 
     /**
      * Update an existing custom folder.
      * Returns false if the new name conflicts with an existing folder.
+     * Uses mutex to prevent race conditions.
      */
     fun updateFolder(folder: FolderEntity, newName: String, newDescription: String): Boolean {
         if (folder.isDefault) return false
 
-        val currentFolders = folders.value
-        // Check for duplicate name (excluding the folder being edited)
-        if (currentFolders.any { it.id != folder.id && it.name.equals(newName, ignoreCase = true) }) {
-            return false
-        }
+        return runBlocking {
+            folderMutex.withLock {
+                val currentFolders = folderRepository.allFolders.first()
+                // Check for duplicate name (excluding the folder being edited)
+                if (currentFolders.any { it.id != folder.id && it.name.equals(newName, ignoreCase = true) }) {
+                    return@runBlocking false
+                }
 
-        viewModelScope.launch {
-            // If name changed, update all notifications first
-            if (folder.name != newName) {
-                notificationRepository.updateFolderName(folder.name, newName)
+                // If name changed, update all notifications first
+                if (folder.name != newName) {
+                    notificationRepository.updateFolderName(folder.name, newName)
+                }
+
+                val updatedFolder = folder.copy(name = newName, description = newDescription)
+                folderRepository.update(updatedFolder)
+                llamaClassifier.invalidateCache()
+                true
             }
-
-            val updatedFolder = folder.copy(name = newName, description = newDescription)
-            folderRepository.update(updatedFolder)
-            llamaClassifier.invalidateCache()
         }
-        return true
     }
 
     /**

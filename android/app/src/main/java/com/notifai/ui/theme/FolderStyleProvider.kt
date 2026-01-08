@@ -32,18 +32,17 @@ object FolderStyleProvider {
         FolderStyle(CustomLime, CustomLimeLight, CustomLimeDark, Icons.Rounded.Lightbulb)
     )
 
+    /**
+     * Get style for a folder. Uses hash-based approach for custom folders
+     * to ensure consistent colors across the app.
+     */
     fun getStyle(folderName: String, sortOrder: Int): FolderStyle {
-        return defaultStyles[folderName] ?: getCustomStyle(sortOrder)
-    }
-
-    fun getCustomStyle(sortOrder: Int): FolderStyle {
-        val index = (sortOrder - 4).coerceAtLeast(0) % customPalette.size
-        return customPalette[index]
+        return defaultStyles[folderName] ?: getStyleByName(folderName)
     }
 
     fun getColorForFolder(folderName: String): Color {
         return defaultStyles[folderName]?.color
-            ?: customPalette[Math.abs(folderName.hashCode()) % customPalette.size].color
+            ?: customPalette[(folderName.hashCode() and Int.MAX_VALUE) % customPalette.size].color
     }
 
     /**
@@ -52,6 +51,6 @@ object FolderStyleProvider {
      */
     fun getStyleByName(folderName: String): FolderStyle {
         return defaultStyles[folderName]
-            ?: customPalette[Math.abs(folderName.hashCode()) % customPalette.size]
+            ?: customPalette[(folderName.hashCode() and Int.MAX_VALUE) % customPalette.size]
     }
 }

@@ -308,23 +308,25 @@ fun HomeScreen(
     }
 
     // Edit folder bottom sheet (separate from context menu)
-    if (showEditSheet && folderBeingEdited != null) {
-        FolderBottomSheet(
-            onDismiss = {
-                showEditSheet = false
-                folderBeingEdited = null
-            },
-            onSave = { name, description ->
-                val success = viewModel.updateFolder(folderBeingEdited!!, name, description)
-                if (success) {
+    folderBeingEdited?.let { folder ->
+        if (showEditSheet) {
+            FolderBottomSheet(
+                onDismiss = {
                     showEditSheet = false
                     folderBeingEdited = null
-                } else {
-                    showDuplicateError = true
-                }
-            },
-            editingFolder = folderBeingEdited
-        )
+                },
+                onSave = { name, description ->
+                    val success = viewModel.updateFolder(folder, name, description)
+                    if (success) {
+                        showEditSheet = false
+                        folderBeingEdited = null
+                    } else {
+                        showDuplicateError = true
+                    }
+                },
+                editingFolder = folder
+            )
+        }
     }
 
     // Delete confirmation dialog
