@@ -136,6 +136,7 @@ Apache 2.0 License
 - [llama.cpp](https://github.com/ggerganov/llama.cpp) - 高性能 LLM 推理引擎
 - [Qwen3](https://huggingface.co/Qwen/Qwen3-0.6B) - 优秀的开源基座模型
 - [llama.rn](https://github.com/mybigday/llama.rn) - 多架构构建灵感来源
+- [Unsloth](https://github.com/unslothai/unsloth) - 高效 LoRA 微调框架
 
 ---
 
@@ -271,6 +272,7 @@ Apache 2.0 License
 - [llama.cpp](https://github.com/ggerganov/llama.cpp) - High-performance LLM inference
 - [Qwen3](https://huggingface.co/Qwen/Qwen3-0.6B) - Excellent open-source base model
 - [llama.rn](https://github.com/mybigday/llama.rn) - Multi-arch build inspiration
+- [Unsloth](https://github.com/unslothai/unsloth) - Efficient LoRA fine-tuning framework
 
 ---
 
