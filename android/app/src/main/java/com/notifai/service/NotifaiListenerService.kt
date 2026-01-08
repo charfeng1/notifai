@@ -72,6 +72,15 @@ class NotifaiListenerService : NotificationListenerService() {
                 val contentIntent = notification.contentIntent
                 notificationIntentCache.put(notificationId, contentIntent, packageName)
 
+                // Use the actual notification post time, not current time
+                // sbn.postTime = when the notification was posted to the system
+                // notification.when = app-specified event time (may be 0 if not set)
+                val actualTimestamp = if (notification.`when` > 0) {
+                    notification.`when`
+                } else {
+                    sbn.postTime
+                }
+
                 // Start classification service
                 val intent = Intent(this@NotifaiListenerService, ClassificationService::class.java).apply {
                     putExtra("notificationId", notificationId)
@@ -79,7 +88,7 @@ class NotifaiListenerService : NotificationListenerService() {
                     putExtra("appName", appName)
                     putExtra("title", title)
                     putExtra("body", text)
-                    putExtra("timestamp", System.currentTimeMillis())
+                    putExtra("timestamp", actualTimestamp)
                 }
 
                 startForegroundService(intent)

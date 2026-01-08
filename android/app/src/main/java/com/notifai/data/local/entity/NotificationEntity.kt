@@ -14,5 +14,6 @@ data class NotificationEntity(
     val folder: String,
     val priority: Int,
     val isRead: Boolean = false,
-    val processingTimeMs: Long = 0L
+    val processingTimeMs: Long = 0L,
+    val notified: Boolean = false  // Whether user has been notified (via system notification)
 )

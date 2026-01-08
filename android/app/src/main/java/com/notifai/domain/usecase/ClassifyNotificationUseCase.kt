@@ -6,13 +6,15 @@ import com.notifai.data.repository.NotificationRepository
 import com.notifai.domain.classifier.ClassificationParser
 import com.notifai.domain.classifier.LlamaClassifier
 import com.notifai.domain.classifier.PromptBuilder
+import com.notifai.service.NotificationDispatcher
 import javax.inject.Inject
 
 class ClassifyNotificationUseCase @Inject constructor(
     private val llamaClassifier: LlamaClassifier,
     private val promptBuilder: PromptBuilder,
     private val classificationParser: ClassificationParser,
-    private val notificationRepository: NotificationRepository
+    private val notificationRepository: NotificationRepository,
+    private val notificationDispatcher: NotificationDispatcher
 ) {
 
     companion object {
@@ -30,16 +32,14 @@ class ClassifyNotificationUseCase @Inject constructor(
         timestamp: Long
     ): Result<Unit> {
         return try {
-            val startTime = System.currentTimeMillis()
-
             // Build prompt
             val prompt = promptBuilder.buildPrompt(appName, title, body)
             Log.d(TAG, "Classifying notification from $appName: $title")
 
             // Run AI inference (will auto-initialize on first use)
-            val response = llamaClassifier.classify(prompt)
-
-            val processingTimeMs = System.currentTimeMillis() - startTime
+            val result = llamaClassifier.classify(prompt)
+            val response = result.response
+            val processingTimeMs = result.inferenceTimeMs
 
             if (response.isEmpty()) {
                 Log.w(TAG, "Empty response from classifier, using defaults")
@@ -54,9 +54,11 @@ class ClassifyNotificationUseCase @Inject constructor(
                     folder = DEFAULT_FOLDER,
                     priority = DEFAULT_PRIORITY,
                     isRead = false,
-                    processingTimeMs = processingTimeMs
+                    processingTimeMs = processingTimeMs,
+                    notified = false
                 )
                 notificationRepository.insert(notification)
+                notificationDispatcher.dispatch(notification)
                 return Result.success(Unit)
             }
 
@@ -81,11 +83,18 @@ class ClassifyNotificationUseCase @Inject constructor(
                 folder = folder,
                 priority = priority,
                 isRead = false,
-                processingTimeMs = processingTimeMs
+                processingTimeMs = processingTimeMs,
+                notified = false
             )
 
             notificationRepository.insert(notification)
             Log.i(TAG, "Notification classified: folder=$folder, priority=$priority, time=${processingTimeMs}ms")
+
+            // Dispatch notification based on priority
+            // P3: Immediate notification
+            // P2: Queued for batch (every 30 min)
+            // P1: No notification
+            notificationDispatcher.dispatch(notification)
 
             Result.success(Unit)
 

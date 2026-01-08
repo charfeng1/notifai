@@ -35,6 +35,20 @@ Fine-tuned Qwen3-0.6B on notification classification with 3-level priority syste
 
 **Key Finding:** Qwen3 solved the Medium/High priority confusion that plagued FunctionGemma. The larger model (600M vs 270M) and simpler JSON output format made a significant difference.
 
+## Base Model Comparison (No Fine-tuning)
+
+From [Benchmark 001](../001-baseline-qwen3-0.6b/README.md), the base Qwen3-0.6B model without fine-tuning:
+
+| Metric | Base Qwen3 | Fine-tuned Qwen3 | Improvement |
+|--------|------------|------------------|-------------|
+| Folder Accuracy | 59.0% | **94.0%** | **+35.0%** |
+| Priority Accuracy | 17.0% | **83.0%** | **+66.0%** |
+| Parse Failures | 0% | 0% | - |
+
+**Note:** Base model uses 5-level priorities, fine-tuned uses 3-level. Both achieve 0% parse failures when using `enable_thinking=False` in the chat template.
+
+**Conclusion:** Fine-tuning provides massive improvements - especially for priority classification (+66% absolute improvement).
+
 ## Training Configuration
 
 ```python

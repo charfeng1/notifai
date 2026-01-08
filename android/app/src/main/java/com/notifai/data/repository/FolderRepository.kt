@@ -13,32 +13,33 @@ class FolderRepository @Inject constructor(
     val allFolders: Flow<List<FolderEntity>> = folderDao.getAllFolders()
 
     suspend fun insertDefaultFolders() {
+        // Descriptions match training data format exactly
         val defaults = listOf(
             FolderEntity(
                 id = "work",
                 name = "Work",
-                description = "Professional messages from work apps like Slack, Jira, Teams, work email, Feishu, DingTalk",
+                description = "Job-related notifications (emails from colleagues, calendar invites, project updates, work apps like Slack, Jira)",
                 isDefault = true,
                 sortOrder = 0
             ),
             FolderEntity(
                 id = "personal",
                 name = "Personal",
-                description = "Messages from friends and family via WhatsApp, WeChat, Telegram, Douyin, RedNote",
+                description = "Family, friends, personal accounts, social media, messaging from personal contacts",
                 isDefault = true,
                 sortOrder = 1
             ),
             FolderEntity(
                 id = "promotions",
                 name = "Promotions",
-                description = "Marketing, deals, spam, promotional content from shopping and service apps",
+                description = "Marketing, sales, deals, newsletters, advertisements, discount offers",
                 isDefault = true,
                 sortOrder = 2
             ),
             FolderEntity(
                 id = "alerts",
                 name = "Alerts",
-                description = "Banking, security, system notifications, delivery updates, transactional messages",
+                description = "System alerts, security, deliveries, bills, account notifications, reminders",
                 isDefault = true,
                 sortOrder = 3
             )
