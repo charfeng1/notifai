@@ -1,0 +1,149 @@
+{
+  "model": "E:\\projects\\notif\\models\\qwen3-0.6b",
+  "total": 100,
+  "folder_accuracy": 0.59,
+  "priority_accuracy": 0.17,
+  "parse_failure_rate": 0.0,
+  "errors": [
+    {
+      "example": 1,
+      "app": "Slack",
+      "title": "#critical-incidents",
+      "expected_folder": "Work",
+      "predicted_folder": "Promotions"
+    },
+    {
+      "example": 3,
+      "app": "Amazon",
+      "title": "Your order is on its way",
+      "expected_folder": "Alerts",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 5,
+      "app": "Gmail",
+      "title": "Marcus Thompson",
+      "expected_folder": "Work",
+      "predicted_folder": "Promotions"
+    },
+    {
+      "example": 10,
+      "app": "FedEx",
+      "title": "Package delivered",
+      "expected_folder": "Alerts",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 14,
+      "app": "Uber",
+      "title": "Your ride is arriving",
+      "expected_folder": "Alerts",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 18,
+      "app": "Bank of America",
+      "title": "Payment received",
+      "expected_folder": "Alerts",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 19,
+      "app": "DoorDash",
+      "title": "Your order is ready!",
+      "expected_folder": "Alerts",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 24,
+      "app": "Walgreens",
+      "title": "Prescription ready",
+      "expected_folder": "Alerts",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 25,
+      "app": "Netflix",
+      "title": "New release: The Last Shift",
+      "expected_folder": "Promotions",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 29,
+      "app": "Gmail",
+      "title": "Alexander Davis",
+      "expected_folder": "Work",
+      "predicted_folder": "Promotions"
+    },
+    {
+      "example": 30,
+      "app": "Google Pay",
+      "title": "Payment failed",
+      "expected_folder": "Alerts",
+      "predicted_folder": "Promotions"
+    },
+    {
+      "example": 31,
+      "app": "WeChat",
+      "title": "公司群",
+      "expected_folder": "Work",
+      "predicted_folder": "Personal"
+    },
+    {
+      "example": 34,
+      "app": "Airbnb",
+      "title": "Your booking confirmed",
+      "expected_folder": "Alerts",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 36,
+      "app": "Linear",
+      "title": "Issue LIN-2847: Product roadmap needs input",
+      "expected_folder": "Work",
+      "predicted_folder": "Promotions"
+    },
+    {
+      "example": 39,
+      "app": "Spotify",
+      "title": "Release Radar",
+      "expected_folder": "Personal",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 40,
+      "app": "UPS",
+      "title": "Delivery attempt",
+      "expected_folder": "Alerts",
+      "predicted_folder": "Promotions"
+    },
+    {
+      "example": 43,
+      "app": "Tencent News",
+      "title": "Breaking: Tech stocks soar",
+      "expected_folder": "Alerts",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 45,
+      "app": "GitHub",
+      "title": "@username requested changes on PR #2934",
+      "expected_folder": "Work",
+      "predicted_folder": "Promotions"
+    },
+    {
+      "example": 49,
+      "app": "Health",
+      "title": "Time to stand",
+      "expected_folder": "Alerts",
+      "predicted_folder": "Work"
+    },
+    {
+      "example": 50,
+      "app": "WeChat",
+      "title": "张三",
+      "expected_folder": "Work",
+      "predicted_folder": "Personal"
+    }
+  ]
+}
