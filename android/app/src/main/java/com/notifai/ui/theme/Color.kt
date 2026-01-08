@@ -58,3 +58,36 @@ val Info = Color(0xFF3B82F6)
 // Glass effect colors
 val GlassWhite = Color(0x0DFFFFFF)
 val GlassBorder = Color(0x1AFFFFFF)
+
+// Custom folder colors - Additional palette for user-created folders
+val CustomPurple = Color(0xFF8B5CF6)      // Violet
+val CustomPurpleLight = Color(0xFFA78BFA)
+val CustomPurpleDark = Color(0xFF7C3AED)
+
+val CustomPink = Color(0xFFEC4899)         // Pink
+val CustomPinkLight = Color(0xFFF472B6)
+val CustomPinkDark = Color(0xFFDB2777)
+
+val CustomCyan = Color(0xFF06B6D4)         // Cyan
+val CustomCyanLight = Color(0xFF22D3EE)
+val CustomCyanDark = Color(0xFF0891B2)
+
+val CustomOrange = Color(0xFFF97316)       // Orange
+val CustomOrangeLight = Color(0xFFFB923C)
+val CustomOrangeDark = Color(0xFFEA580C)
+
+val CustomTeal = Color(0xFF14B8A6)         // Teal
+val CustomTealLight = Color(0xFF2DD4BF)
+val CustomTealDark = Color(0xFF0D9488)
+
+val CustomIndigo = Color(0xFF6366F1)       // Indigo
+val CustomIndigoLight = Color(0xFF818CF8)
+val CustomIndigoDark = Color(0xFF4F46E5)
+
+val CustomRose = Color(0xFFF43F5E)         // Rose
+val CustomRoseLight = Color(0xFFFB7185)
+val CustomRoseDark = Color(0xFFE11D48)
+
+val CustomLime = Color(0xFF84CC16)         // Lime
+val CustomLimeLight = Color(0xFFA3E635)
+val CustomLimeDark = Color(0xFF65A30D)

@@ -3,8 +3,10 @@ package com.notifai.ui.screens.home
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
@@ -14,11 +16,8 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Notifications
-import androidx.compose.material.icons.rounded.Work
-import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.LocalOffer
-import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,15 +27,18 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.notifai.data.local.entity.FolderEntity
 import com.notifai.data.local.entity.NotificationEntity
+import com.notifai.ui.components.DeleteFolderDialog
+import com.notifai.ui.components.FolderBottomSheet
 import com.notifai.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -54,6 +56,11 @@ fun HomeScreen(
     val folderCounts by viewModel.folderCounts.collectAsStateWithLifecycle()
     val recentNotifications by viewModel.recentNotifications.collectAsStateWithLifecycle()
     var showMenu by remember { mutableStateOf(false) }
+
+    // Folder management state
+    var showAddFolderSheet by remember { mutableStateOf(false) }
+    var editingFolder by remember { mutableStateOf<FolderEntity?>(null) }
+    var folderToDelete by remember { mutableStateOf<FolderEntity?>(null) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -115,15 +122,36 @@ fun HomeScreen(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Section header for folders
+            // Section header for folders with add button
             item {
-                Text(
-                    "FOLDERS",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    letterSpacing = 1.5.sp,
-                    modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 4.dp, bottom = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "FOLDERS",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        letterSpacing = 1.5.sp
+                    )
+                    FilledTonalIconButton(
+                        onClick = { showAddFolderSheet = true },
+                        modifier = Modifier.size(28.dp),
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Icon(
+                            Icons.Rounded.Add,
+                            contentDescription = "Add folder",
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
             }
 
             // Folder cards in a 2x2 grid layout
@@ -139,6 +167,9 @@ fun HomeScreen(
                                     folder = folder,
                                     count = folderCounts[folder.name] ?: 0,
                                     onClick = { onNavigateToFolder(folder.name) },
+                                    onLongClick = if (!folder.isDefault) {
+                                        { editingFolder = folder }
+                                    } else null,
                                     modifier = Modifier.weight(1f)
                                 )
                             }
@@ -224,29 +255,118 @@ fun HomeScreen(
             }
         }
     }
+
+    // State for showing edit sheet (moved outside the let block)
+    var showEditSheet by remember { mutableStateOf(false) }
+    var folderBeingEdited by remember { mutableStateOf<FolderEntity?>(null) }
+    var showDuplicateError by remember { mutableStateOf(false) }
+
+    // Add folder bottom sheet
+    if (showAddFolderSheet) {
+        FolderBottomSheet(
+            onDismiss = { showAddFolderSheet = false },
+            onSave = { name, description ->
+                val success = viewModel.addFolder(name, description)
+                if (success) {
+                    showAddFolderSheet = false
+                } else {
+                    showDuplicateError = true
+                }
+            }
+        )
+    }
+
+    // Context menu dialog for edit/delete
+    editingFolder?.let { folder ->
+        AlertDialog(
+            onDismissRequest = { editingFolder = null },
+            title = { Text(folder.name, fontWeight = FontWeight.Bold) },
+            text = { Text("What would you like to do with this folder?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    folderBeingEdited = folder
+                    showEditSheet = true
+                    editingFolder = null
+                }) {
+                    Text("Edit")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        folderToDelete = folder
+                        editingFolder = null
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Delete")
+                }
+            }
+        )
+    }
+
+    // Edit folder bottom sheet (separate from context menu)
+    folderBeingEdited?.let { folder ->
+        if (showEditSheet) {
+            FolderBottomSheet(
+                onDismiss = {
+                    showEditSheet = false
+                    folderBeingEdited = null
+                },
+                onSave = { name, description ->
+                    val success = viewModel.updateFolder(folder, name, description)
+                    if (success) {
+                        showEditSheet = false
+                        folderBeingEdited = null
+                    } else {
+                        showDuplicateError = true
+                    }
+                },
+                editingFolder = folder
+            )
+        }
+    }
+
+    // Delete confirmation dialog
+    folderToDelete?.let { folder ->
+        DeleteFolderDialog(
+            folder = folder,
+            onDismiss = { folderToDelete = null },
+            onConfirm = {
+                viewModel.deleteFolder(folder)
+                folderToDelete = null
+            }
+        )
+    }
+
+    // Duplicate folder name error
+    if (showDuplicateError) {
+        AlertDialog(
+            onDismissRequest = { showDuplicateError = false },
+            title = { Text("Folder Exists", fontWeight = FontWeight.Bold) },
+            text = { Text("A folder with this name already exists. Please choose a different name.") },
+            confirmButton = {
+                TextButton(onClick = { showDuplicateError = false }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
 }
 
-private data class FolderStyle(
-    val color: Color,
-    val colorLight: Color,
-    val colorDark: Color,
-    val icon: ImageVector
-)
-
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FolderCard(
     folder: FolderEntity,
     count: Int,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    val style = when (folder.name) {
-        "Work" -> FolderStyle(WorkColor, WorkColorLight, WorkColorDark, Icons.Rounded.Work)
-        "Personal" -> FolderStyle(PersonalColor, PersonalColorLight, PersonalColorDark, Icons.Rounded.Person)
-        "Promotions" -> FolderStyle(PromotionsColor, PromotionsColorLight, PromotionsColorDark, Icons.Rounded.LocalOffer)
-        "Alerts" -> FolderStyle(AlertsColor, AlertsColorLight, AlertsColorDark, Icons.Rounded.Warning)
-        else -> FolderStyle(AccentBlue, AccentBlueLight, AccentBlueDark, Icons.Rounded.Notifications)
-    }
+    val style = FolderStyleProvider.getStyle(folder.name, folder.sortOrder)
+    val hapticFeedback = LocalHapticFeedback.current
 
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -265,10 +385,16 @@ fun FolderCard(
                 ambientColor = style.color.copy(alpha = 0.3f),
                 spotColor = style.color.copy(alpha = 0.2f)
             )
-            .clickable(
+            .combinedClickable(
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = onClick
+                onClick = onClick,
+                onLongClick = onLongClick?.let { callback ->
+                    {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                        callback()
+                    }
+                }
             ),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
@@ -359,13 +485,7 @@ fun NotificationCard(
     onClick: () -> Unit = {},
     animationDelay: Int = 0
 ) {
-    val folderColor = when (notification.folder) {
-        "Work" -> WorkColor
-        "Personal" -> PersonalColor
-        "Promotions" -> PromotionsColor
-        "Alerts" -> AlertsColor
-        else -> MaterialTheme.colorScheme.secondary
-    }
+    val folderColor = FolderStyleProvider.getColorForFolder(notification.folder)
 
     val priorityColor = when (notification.priority) {
         3 -> PriorityHigh

@@ -7,11 +7,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.rounded.Inbox
-import androidx.compose.material.icons.rounded.Work
-import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.LocalOffer
-import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,14 +15,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.notifai.ui.screens.home.NotificationCard
-import com.notifai.ui.theme.*
+import com.notifai.ui.theme.FolderStyleProvider
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,30 +32,7 @@ fun FolderDetailScreen(
     viewModel: FolderDetailViewModel = hiltViewModel()
 ) {
     val notifications by viewModel.notifications.collectAsStateWithLifecycle()
-
-    val folderColor = when (folderName) {
-        "Work" -> WorkColor
-        "Personal" -> PersonalColor
-        "Promotions" -> PromotionsColor
-        "Alerts" -> AlertsColor
-        else -> AccentBlue
-    }
-
-    val folderColorDark = when (folderName) {
-        "Work" -> WorkColorDark
-        "Personal" -> PersonalColorDark
-        "Promotions" -> PromotionsColorDark
-        "Alerts" -> AlertsColorDark
-        else -> AccentBlueDark
-    }
-
-    val folderIcon: ImageVector = when (folderName) {
-        "Work" -> Icons.Rounded.Work
-        "Personal" -> Icons.Rounded.Person
-        "Promotions" -> Icons.Rounded.LocalOffer
-        "Alerts" -> Icons.Rounded.Warning
-        else -> Icons.Rounded.Inbox
-    }
+    val style = FolderStyleProvider.getStyleByName(folderName)
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -79,13 +50,13 @@ fun FolderDetailScreen(
                                 .clip(CircleShape)
                                 .background(
                                     brush = Brush.linearGradient(
-                                        colors = listOf(folderColor, folderColorDark)
+                                        colors = listOf(style.color, style.colorDark)
                                     )
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = folderIcon,
+                                imageVector = style.icon,
                                 contentDescription = null,
                                 tint = Color.White,
                                 modifier = Modifier.size(24.dp)
@@ -134,7 +105,7 @@ fun FolderDetailScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Icon(
-                        imageVector = folderIcon,
+                        imageVector = style.icon,
                         contentDescription = null,
                         modifier = Modifier.size(48.dp),
                         tint = MaterialTheme.colorScheme.outlineVariant
