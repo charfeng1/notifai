@@ -30,12 +30,16 @@ class ClassifyNotificationUseCase @Inject constructor(
         timestamp: Long
     ): Result<Unit> {
         return try {
+            val startTime = System.currentTimeMillis()
+
             // Build prompt
             val prompt = promptBuilder.buildPrompt(appName, title, body)
             Log.d(TAG, "Classifying notification from $appName: $title")
 
             // Run AI inference (will auto-initialize on first use)
             val response = llamaClassifier.classify(prompt)
+
+            val processingTimeMs = System.currentTimeMillis() - startTime
 
             if (response.isEmpty()) {
                 Log.w(TAG, "Empty response from classifier, using defaults")
@@ -49,7 +53,8 @@ class ClassifyNotificationUseCase @Inject constructor(
                     timestamp = timestamp,
                     folder = DEFAULT_FOLDER,
                     priority = DEFAULT_PRIORITY,
-                    isRead = false
+                    isRead = false,
+                    processingTimeMs = processingTimeMs
                 )
                 notificationRepository.insert(notification)
                 return Result.success(Unit)
@@ -75,11 +80,12 @@ class ClassifyNotificationUseCase @Inject constructor(
                 timestamp = timestamp,
                 folder = folder,
                 priority = priority,
-                isRead = false
+                isRead = false,
+                processingTimeMs = processingTimeMs
             )
 
             notificationRepository.insert(notification)
-            Log.i(TAG, "Notification classified: folder=$folder, priority=$priority")
+            Log.i(TAG, "Notification classified: folder=$folder, priority=$priority, time=${processingTimeMs}ms")
 
             Result.success(Unit)
 

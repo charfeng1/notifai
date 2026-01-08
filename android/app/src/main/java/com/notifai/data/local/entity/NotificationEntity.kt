@@ -13,5 +13,6 @@ data class NotificationEntity(
     val timestamp: Long,
     val folder: String,
     val priority: Int,
-    val isRead: Boolean = false
+    val isRead: Boolean = false,
+    val processingTimeMs: Long = 0L
 )
