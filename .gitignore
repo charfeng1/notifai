@@ -3,11 +3,13 @@ llama.cpp/
 llama.rn/
 pocketpal-ai/
 
-# ========== Model Weights (use HuggingFace) ==========
-*.gguf
+# ========== Model Weights ==========
+# *.gguf tracked via Git LFS (see .gitattributes)
 *.safetensors
 *.bin
-models/
+/models/
+# Allow bundled model in Android assets
+!android/app/src/main/assets/models/
 
 # ========== Finetuned Model Outputs ==========
 functiongemma-finetuned-notif/
