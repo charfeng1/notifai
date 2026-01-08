@@ -118,11 +118,14 @@ class LlamaClassifier @Inject constructor(
 
     /**
      * Invalidate the cached system prompt (e.g., when folders change).
+     * Must acquire mutex to avoid corrupting KV cache during inference.
      */
-    fun invalidateCache() {
-        cachedSystemPromptHash = 0
-        nativeInvalidateCache()
-        Log.i(TAG, "System prompt cache invalidated")
+    suspend fun invalidateCache() = withContext(Dispatchers.IO) {
+        inferenceMutex.withLock {
+            cachedSystemPromptHash = 0
+            nativeInvalidateCache()
+            Log.i(TAG, "System prompt cache invalidated")
+        }
     }
 
     data class ClassificationResult(val response: String, val inferenceTimeMs: Long)
