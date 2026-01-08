@@ -32,18 +32,57 @@
 
 ### 快速开始
 
+#### 前置要求
+
+- [Git](https://git-scm.com/) + [Git LFS](https://git-lfs.com/)
+- [Android Studio](https://developer.android.com/studio) (Ladybug 2024.2+ 推荐)
+- Android 手机 (ARM64, Android 8.0+)
+- USB 数据线
+
+#### 第一步：克隆仓库
+
 ```bash
-# 1. 克隆仓库（包含模型，约 650MB）
+# 安装 Git LFS（如未安装）
+git lfs install
+
+# 克隆仓库（模型 ~650MB，需要几分钟）
 git clone https://github.com/charfeng1/notifai.git
 cd notifai
 
-# 2. 克隆 llama.cpp
+# 克隆 llama.cpp 推理引擎
 git clone https://github.com/ggerganov/llama.cpp.git
-
-# 3. 用 Android Studio 打开 android/ 目录，构建并运行
 ```
 
-> **注意**：模型文件通过 Git LFS 托管，克隆时自动下载。如未安装 Git LFS，请先运行 `git lfs install`。
+#### 第二步：构建 APK
+
+1. 打开 Android Studio
+2. 选择 **File → Open**，选择 `notifai/android` 目录
+3. 等待 Gradle 同步完成（首次约 2-5 分钟）
+4. 点击 **Build → Make Project** 或按 `Ctrl+F9`
+
+#### 第三步：安装到手机
+
+1. 在手机上启用 **开发者选项** 和 **USB 调试**
+   - 设置 → 关于手机 → 连续点击"版本号" 7 次
+   - 设置 → 开发者选项 → 开启 USB 调试
+2. 用 USB 连接手机到电脑
+3. 在 Android Studio 工具栏选择你的设备
+4. 点击 **Run ▶** 或按 `Shift+F10`
+
+#### 第四步：授权通知访问
+
+首次启动应用时：
+
+1. 点击 **授予通知权限** 按钮
+2. 系统会跳转到 **通知访问** 设置页面
+3. 找到 **NotifAI** 并开启权限
+4. 返回应用，等待模型加载（首次约 10-20 秒）
+
+#### 开始使用
+
+- 发送一条测试通知（如微信消息）
+- 通知会自动分类到对应文件夹（Job/Private/Deals/Notices）
+- 点击 **+** 可添加自定义文件夹
 
 ### 技术架构
 
@@ -170,18 +209,57 @@ AI-powered notification organizer for Android using on-device Qwen3-0.6B LLM. Fu
 
 ### Quick Start
 
+#### Prerequisites
+
+- [Git](https://git-scm.com/) + [Git LFS](https://git-lfs.com/)
+- [Android Studio](https://developer.android.com/studio) (Ladybug 2024.2+ recommended)
+- Android phone (ARM64, Android 8.0+)
+- USB cable
+
+#### Step 1: Clone the Repository
+
 ```bash
-# 1. Clone the repository (includes model, ~650MB)
+# Install Git LFS (if not already installed)
+git lfs install
+
+# Clone the repo (model is ~650MB, takes a few minutes)
 git clone https://github.com/charfeng1/notifai.git
 cd notifai
 
-# 2. Clone llama.cpp
+# Clone llama.cpp inference engine
 git clone https://github.com/ggerganov/llama.cpp.git
-
-# 3. Open android/ in Android Studio, build and run
 ```
 
-> **Note**: The model is hosted via Git LFS and downloads automatically on clone. If you don't have Git LFS installed, run `git lfs install` first.
+#### Step 2: Build the APK
+
+1. Open Android Studio
+2. Select **File → Open**, navigate to the `notifai/android` directory
+3. Wait for Gradle sync to complete (first time takes 2-5 minutes)
+4. Click **Build → Make Project** or press `Ctrl+F9`
+
+#### Step 3: Install on Your Phone
+
+1. Enable **Developer Options** and **USB Debugging** on your phone:
+   - Settings → About Phone → Tap "Build Number" 7 times
+   - Settings → Developer Options → Enable USB Debugging
+2. Connect your phone to your computer via USB
+3. Select your device in the Android Studio toolbar
+4. Click **Run ▶** or press `Shift+F10`
+
+#### Step 4: Grant Notification Access
+
+On first launch:
+
+1. Tap the **Grant Notification Permission** button
+2. You'll be redirected to the **Notification Access** settings page
+3. Find **NotifAI** and enable the permission
+4. Return to the app and wait for the model to load (first time takes ~10-20 seconds)
+
+#### Start Using
+
+- Send a test notification (e.g., a WeChat or WhatsApp message)
+- Notifications are automatically classified into folders (Job/Private/Deals/Notices)
+- Tap **+** to add custom folders
 
 ### Architecture
 
