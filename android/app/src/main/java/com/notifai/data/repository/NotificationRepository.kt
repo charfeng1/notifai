@@ -27,4 +27,10 @@ class NotificationRepository @Inject constructor(
 
     suspend fun deleteOlderThan(timestamp: Long) =
         notificationDao.deleteOlderThan(timestamp)
+
+    suspend fun deleteByFolder(folderName: String) =
+        notificationDao.deleteByFolder(folderName)
+
+    suspend fun updateFolderName(oldName: String, newName: String) =
+        notificationDao.updateFolderName(oldName, newName)
 }
