@@ -23,6 +23,7 @@ object DatabaseModule {
             NotifaiDatabase::class.java,
             "notifai_db"
         )
+            .addMigrations(NotifaiDatabase.MIGRATION_1_2)
             .fallbackToDestructiveMigration()
             .build()
     }
