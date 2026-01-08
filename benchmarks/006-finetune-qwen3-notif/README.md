@@ -1,79 +1,79 @@
-# Qwen3-0.6B Fine-tuning for Notification Classification (3-Level Priority)
+# 基准测试 006: Qwen3-0.6B 微调（3级优先级）
 
-**Date:** 2026-01-08
-**Model:** Qwen3-0.6B (Qwen/Qwen3-0.6B)
-**Task:** Notification classification (folder + 3-level priority)
+**日期:** 2026-01-08
+**模型:** Qwen3-0.6B (Qwen/Qwen3-0.6B)
+**任务:** 通知分类（文件夹 + 3级优先级）
 
-## Summary
+## 摘要
 
-Fine-tuned Qwen3-0.6B on notification classification with 3-level priority system. **Massive improvement** over FunctionGemma v2, especially in priority classification.
+对 Qwen3-0.6B 进行了3级优先级系统的通知分类微调。相比 FunctionGemma v2 **大幅提升**，尤其是优先级分类。
 
-| Metric | Result |
-|--------|--------|
-| Folder Accuracy | **94.0%** |
-| Priority Accuracy | **83.0%** |
-| Both Correct | **78.2%** |
-| Parse Failures | 0% |
-| Training Time | ~81 minutes |
-| Test Samples | 500 |
+| 指标 | 结果 |
+|------|------|
+| 文件夹准确率 | **94.0%** |
+| 优先级准确率 | **83.0%** |
+| 综合准确率 | **78.2%** |
+| 解析失败率 | 0% |
+| 训练时间 | ~81 分钟 |
+| 测试样本 | 500 |
 
-## Comparison to FunctionGemma v2
+## 与 FunctionGemma v2 对比
 
-| Metric | FunctionGemma v2 | Qwen3-0.6B | Change |
-|--------|-----------------|------------|--------|
-| Folder | 90.6% | **94.0%** | +3.4% |
-| Priority | 54.6% | **83.0%** | **+28.4%** |
-| Both | 49.0% | **78.2%** | **+29.2%** |
+| 指标 | FunctionGemma v2 | Qwen3-0.6B | 变化 |
+|------|-----------------|------------|------|
+| 文件夹 | 90.6% | **94.0%** | +3.4% |
+| 优先级 | 54.6% | **83.0%** | **+28.4%** |
+| 综合 | 49.0% | **78.2%** | **+29.2%** |
 
-### Priority Breakdown Comparison
+### 优先级细分对比
 
-| Priority | FunctionGemma v2 | Qwen3-0.6B | Change |
-|----------|-----------------|------------|--------|
-| 1 (Low) | 79.4% | 90.7% | +11.3% |
-| 2 (Medium) | 22.9% | **66.4%** | **+43.5%** |
-| 3 (High) | 35.9% | **86.4%** | **+50.5%** |
+| 优先级 | FunctionGemma v2 | Qwen3-0.6B | 变化 |
+|--------|-----------------|------------|------|
+| 1 (低) | 79.4% | 90.7% | +11.3% |
+| 2 (中) | 22.9% | **66.4%** | **+43.5%** |
+| 3 (高) | 35.9% | **86.4%** | **+50.5%** |
 
-**Key Finding:** Qwen3 solved the Medium/High priority confusion that plagued FunctionGemma. The larger model (600M vs 270M) and simpler JSON output format made a significant difference.
+**关键发现:** Qwen3 解决了困扰 FunctionGemma 的中/高优先级混淆问题。更大的模型（600M vs 270M）和更简单的 JSON 输出格式产生了显著差异。
 
-## Base Model Comparison (No Fine-tuning)
+## 与基础模型对比（未微调）
 
-From [Benchmark 001](../001-baseline-qwen3-0.6b/README.md), the base Qwen3-0.6B model without fine-tuning:
+来自[基准测试 001](../001-baseline-qwen3-0.6b/README.md)的基础 Qwen3-0.6B 模型（未微调）：
 
-| Metric | Base Qwen3 | Fine-tuned Qwen3 | Improvement |
-|--------|------------|------------------|-------------|
-| Folder Accuracy | 59.0% | **94.0%** | **+35.0%** |
-| Priority Accuracy | 17.0% | **83.0%** | **+66.0%** |
-| Parse Failures | 0% | 0% | - |
+| 指标 | 基础 Qwen3 | 微调后 Qwen3 | 提升 |
+|------|------------|--------------|------|
+| 文件夹准确率 | 59.0% | **94.0%** | **+35.0%** |
+| 优先级准确率 | 17.0% | **83.0%** | **+66.0%** |
+| 解析失败率 | 0% | 0% | - |
 
-**Note:** Base model uses 5-level priorities, fine-tuned uses 3-level. Both achieve 0% parse failures when using `enable_thinking=False` in the chat template.
+**备注:** 基础模型使用5级优先级，微调后使用3级。在聊天模板中使用 `enable_thinking=False` 时，两者都能达到0%解析失败率。
 
-**Conclusion:** Fine-tuning provides massive improvements - especially for priority classification (+66% absolute improvement).
+**结论:** 微调带来巨大提升 - 尤其是优先级分类（绝对提升 +66%）。
 
-## Training Configuration
+## 训练配置
 
 ```python
-# Dataset
+# 数据集
 train_examples = 12,000
 test_examples = 4,001
 total_examples = 16,001
 
-# Model
+# 模型
 base_model = "Qwen/Qwen3-0.6B"
 parameters = 606,142,464
 
-# Quantization (4-bit NF4)
+# 量化（4-bit NF4）
 load_in_4bit = True
 bnb_4bit_quant_type = "nf4"
-bnb_4bit_compute_dtype = torch.bfloat16  # CRITICAL
+bnb_4bit_compute_dtype = torch.bfloat16  # 关键参数
 bnb_4bit_use_double_quant = True
 
-# LoRA Configuration
+# LoRA 配置
 r = 16
 lora_alpha = 16
 target_modules = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
-trainable_params = 10,092,544 (1.67% of 606M)
+trainable_params = 10,092,544 (占 606M 的 1.67%)
 
-# Training
+# 训练参数
 epochs = 3
 batch_size = 4
 gradient_accumulation = 4
@@ -85,31 +85,31 @@ dtype = bfloat16
 total_steps = 2,250
 ```
 
-## Priority Breakdown
+## 优先级细分
 
-The 3-level priority system:
-- **1 (Low):** Can ignore or check later
-- **2 (Medium):** Worth checking today
-- **3 (High):** Requires immediate attention
+3级优先级系统：
+- **1 (低):** 可忽略或稍后查看
+- **2 (中):** 当天值得查看
+- **3 (高):** 需要立即关注
 
-| Priority | Accuracy | Samples |
-|----------|----------|---------|
-| 1 (Low) | **90.7%** | 233/257 |
-| 2 (Medium) | 66.4% | 93/140 |
-| 3 (High) | **86.4%** | 89/103 |
+| 优先级 | 准确率 | 样本数 |
+|--------|--------|--------|
+| 1 (低) | **90.7%** | 233/257 |
+| 2 (中) | 66.4% | 93/140 |
+| 3 (高) | **86.4%** | 89/103 |
 
-## Folder Breakdown
+## 文件夹细分
 
-| Folder | Accuracy | Samples |
-|--------|----------|---------|
+| 文件夹 | 准确率 | 样本数 |
+|--------|--------|--------|
 | Work | **96.5%** | 194/201 |
 | Personal | 92.6% | 126/136 |
 | Promotions | 90.9% | 80/88 |
 | Alerts | 93.3% | 70/75 |
 
-## Output Format
+## 输出格式
 
-**System Prompt:**
+**系统提示:**
 ```
 You are a notification classifier. Classify the notification into a folder and priority level.
 
@@ -128,41 +128,41 @@ Respond with ONLY a JSON object: {"folder": "<folder>", "priority": <1-3>}
 /no_think
 ```
 
-**Model Output:**
+**模型输出:**
 ```json
 {"folder": "Work", "priority": 3}
 ```
 
-## Training Metrics
+## 训练指标
 
-- Final training loss: 0.2257
-- Final mean token accuracy: 96.95%
-- Training time: 1 hour 21 minutes (2,250 steps)
+- 最终训练损失: 0.2257
+- 最终平均 token 准确率: 96.95%
+- 训练时间: 1 小时 21 分钟（2,250 步）
 
-## Model Output
+## 模型输出
 
-**Location:** `E:\projects\functiongemma-finetune\notif-3level\qwen3-finetuned`
+**位置:** `E:\projects\functiongemma-finetune\notif-3level\qwen3-finetuned`
 
-## Key Findings
+## 关键发现
 
-1. **Priority accuracy dramatically improved** from 54.6% to 83.0% (+28.4%)
-2. **Medium/High distinction solved** - Medium went from 22.9% to 66.4%, High from 35.9% to 86.4%
-3. **Folder classification improved** from 90.6% to 94.0%
-4. **Zero parse failures** - model reliably outputs valid JSON
-5. **Simple JSON format** works better than FunctionGemma's function-calling syntax
+1. **优先级准确率大幅提升** 从 54.6% 到 83.0%（+28.4%）
+2. **中/高区分问题解决** - 中优先级从 22.9% 到 66.4%，高优先级从 35.9% 到 86.4%
+3. **文件夹分类提升** 从 90.6% 到 94.0%
+4. **零解析失败** - 模型可靠地输出有效 JSON
+5. **简单 JSON 格式** 比 FunctionGemma 的函数调用语法效果更好
 
-## Why Qwen3 Works Better
+## 为什么 Qwen3 效果更好
 
-1. **Larger model** (606M vs 271M parameters) - more capacity to learn nuanced distinctions
-2. **Simpler output format** - JSON is easier to learn than FunctionGemma's complex syntax
-3. **`/no_think` directive** - disables Qwen3's thinking mode for direct responses
-4. **Better pre-training** - Qwen3 likely has more diverse training data
+1. **更大的模型**（606M vs 271M 参数）- 更强的学习细微区分能力
+2. **更简单的输出格式** - JSON 比 FunctionGemma 的复杂语法更容易学习
+3. **`/no_think` 指令** - 禁用 Qwen3 的思考模式以获得直接响应
+4. **更好的预训练** - Qwen3 可能有更多样化的训练数据
 
-## Files
+## 相关文件
 
-- Training script: `E:\projects\functiongemma-finetune\notif-3level\finetune.py`
-- Evaluation script: `E:\projects\functiongemma-finetune\notif-3level\evaluate.py`
-- Conversion script: `E:\projects\functiongemma-finetune\notif-3level\convert_to_qwen3.py`
-- Training data: `E:\projects\functiongemma-finetune\notif-3level\train.jsonl`
-- Test data: `E:\projects\functiongemma-finetune\notif-3level\test.jsonl`
-- Results: `E:\projects\functiongemma-finetune\notif-3level\results.json`
+- 训练脚本: `E:\projects\functiongemma-finetune\notif-3level\finetune.py`
+- 评估脚本: `E:\projects\functiongemma-finetune\notif-3level\evaluate.py`
+- 转换脚本: `E:\projects\functiongemma-finetune\notif-3level\convert_to_qwen3.py`
+- 训练数据: `E:\projects\functiongemma-finetune\notif-3level\train.jsonl`
+- 测试数据: `E:\projects\functiongemma-finetune\notif-3level\test.jsonl`
+- 结果文件: `E:\projects\functiongemma-finetune\notif-3level\results.json`
