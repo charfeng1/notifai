@@ -33,20 +33,17 @@
 ### 快速开始
 
 ```bash
-# 1. 克隆仓库
+# 1. 克隆仓库（包含模型，约 650MB）
 git clone https://github.com/charfeng1/notifai.git
 cd notifai
 
-# 2. 下载模型
-pip install huggingface-hub
-huggingface-cli download charfeng1/qwen3-0.6b-notif-gguf \
-  --local-dir android/app/src/main/assets/models/
-
-# 3. 克隆 llama.cpp
+# 2. 克隆 llama.cpp
 git clone https://github.com/ggerganov/llama.cpp.git
 
-# 4. 用 Android Studio 打开 android/ 目录，构建并运行
+# 3. 用 Android Studio 打开 android/ 目录，构建并运行
 ```
+
+> **注意**：模型文件通过 Git LFS 托管，克隆时自动下载。如未安装 Git LFS，请先运行 `git lfs install`。
 
 ### 技术架构
 
@@ -174,20 +171,17 @@ AI-powered notification organizer for Android using on-device Qwen3-0.6B LLM. Fu
 ### Quick Start
 
 ```bash
-# 1. Clone the repository
+# 1. Clone the repository (includes model, ~650MB)
 git clone https://github.com/charfeng1/notifai.git
 cd notifai
 
-# 2. Download the model
-pip install huggingface-hub
-huggingface-cli download charfeng1/qwen3-0.6b-notif-gguf \
-  --local-dir android/app/src/main/assets/models/
-
-# 3. Clone llama.cpp
+# 2. Clone llama.cpp
 git clone https://github.com/ggerganov/llama.cpp.git
 
-# 4. Open android/ in Android Studio, build and run
+# 3. Open android/ in Android Studio, build and run
 ```
+
+> **Note**: The model is hosted via Git LFS and downloads automatically on clone. If you don't have Git LFS installed, run `git lfs install` first.
 
 ### Architecture
 
